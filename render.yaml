@@ -1,0 +1,19 @@
+# Render Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Web Service - serves frontend + backend API
+  - type: web
+    name: omsut
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OMSUT_JWT_SECRET
+        generateValue: true
+      - key: OMSUT_ADMINS
+        value: admin
+    healthCheckPath: /api/status
+    autoDeploy: true
