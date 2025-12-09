@@ -241192,6 +241192,7 @@ pointures
 pointus
 point-virgule
 poire
+poires
 poiré
 poireau
 poireauta

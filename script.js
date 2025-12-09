@@ -41,7 +41,8 @@ let currentTry = 0;
 let isGameOver = false;
 let dailyStreak = parseInt(localStorage.getItem("omsut_dailyStreak") || "0", 10) || 0;
 let bestStreak = parseInt(localStorage.getItem("omsut_bestDailyStreak") || "0", 10) || 0;
-let activeCol = 0;
+// active column starts at 1 because column 0 is fixed (first letter)
+let activeCol = 1;
 
 const gridElement = document.getElementById("grid");
 // no separate input element: typing is done directly in the grid
@@ -66,6 +67,12 @@ function initGrid() {
       cell.dataset.col = col;
       // make cells focusable for direct typing (will be enabled for current row)
       cell.tabIndex = -1;
+      // if this is the first column, prefill the letter and lock it
+      if (col === 0) {
+        cell.classList.add('fixed');
+        cell.textContent = SECRET ? SECRET[0] : '';
+        cell.tabIndex = -1;
+      }
       cell.addEventListener('click', () => {
         // only allow clicking into the active row
         if (parseInt(cell.dataset.row, 10) === currentTry && !isGameOver) {
@@ -142,6 +149,8 @@ async function loadWords() {
 
   // If daily and already played today, block play
   checkDailyPlayed();
+  // show/hide 'Nouveau mot' according to mode on initial load
+  showNewWordButton(gameMode === 'free');
 
   setMessage(`Essai ${currentTry + 1} sur ${MAX_TRIES}`);
   console.log("Mot secret :", SECRET);
@@ -231,6 +240,12 @@ function resetGame(preserveMode = true) {
 
   // If daily and already played today, block play
   checkDailyPlayed();
+
+  // hide replay button when a new game starts
+  showReplayButton(false);
+
+  // show/hide new-word button depending on current mode
+  showNewWordButton(gameMode === 'free');
 }
 
 // Mode UI handlers
@@ -239,6 +254,44 @@ const modeFreeEl = document.getElementById("mode-free");
 
 // keyboard element
 const keyboardEl = document.getElementById("keyboard");
+const replayBtn = document.getElementById('replay-btn');
+const newWordBtn = document.getElementById('new-word-btn');
+
+function showReplayButton(show) {
+  if (!replayBtn) return;
+  replayBtn.style.display = show ? 'inline-block' : 'none';
+}
+
+function showNewWordButton(show) {
+  if (!newWordBtn) return;
+  newWordBtn.style.display = show ? 'inline-block' : 'none';
+}
+
+if (replayBtn) {
+  replayBtn.addEventListener('click', () => {
+    // ensure we're in free mode and start a new free game
+    gameMode = 'free';
+    localStorage.setItem('omsut_mode', 'free');
+    resetGame();
+    showReplayButton(false);
+  });
+}
+
+if (newWordBtn) {
+  newWordBtn.addEventListener('click', () => {
+    if (gameMode !== 'free') {
+      setMessage('Bouton "Nouveau mot" disponible uniquement en mode Libre.', true);
+      return;
+    }
+    // ask for confirmation before resetting the current free game
+    const ok = window.confirm('Voulez-vous vraiment changer de mot ? Votre progression actuelle sera réinitialisée.');
+    if (!ok) return;
+    // start a fresh free game with a new secret
+    resetGame();
+    setMessage('Nouveau mot généré — bonne chance !');
+    showReplayButton(false);
+  });
+}
 
 function renderKeyboard() {
   if (!keyboardEl) return;
@@ -288,7 +341,8 @@ function setActiveCol(col) {
   // move focus/active column within current row
   const prev = getCell(currentTry, activeCol);
   if (prev) prev.classList.remove('focused');
-  activeCol = Math.max(0, Math.min(col, WORD_LENGTH - 1));
+  // never allow activeCol to be 0 (fixed first letter)
+  activeCol = Math.max(1, Math.min(col, WORD_LENGTH - 1));
   const cell = getCell(currentTry, activeCol);
   if (cell) {
     cell.classList.add('focused');
@@ -308,16 +362,76 @@ function setEditableRow(row) {
   for (let col = 0; col < WORD_LENGTH; col++) {
     const c = getCell(row, col);
     if (!c) continue;
+    // keep the first column fixed and prefilled with secret's first letter
+    if (col === 0) {
+      c.classList.add('fixed');
+      c.tabIndex = -1;
+      c.textContent = SECRET ? SECRET[0] : c.textContent || '';
+      continue;
+    }
+    // if this cell was prefilled as fixed from a previous correct letter, keep it fixed
+    if (c.classList.contains('fixed')) {
+      c.tabIndex = -1;
+      // ensure text is set (in case it was added earlier)
+      c.textContent = c.textContent || '';
+      continue;
+    }
     c.classList.add('editable');
     c.tabIndex = 0;
     c.textContent = c.textContent || '';
   }
-  activeCol = 0;
+  // start editing at the first editable (non-fixed) column
+  // Prefer the first editable AND empty cell; otherwise pick the first editable cell
+  let firstEditable = null;
+  // 1) find first non-fixed empty cell
+  for (let cc = 0; cc < WORD_LENGTH; cc++) {
+    const cx = getCell(row, cc);
+    if (!cx) continue;
+    if (!cx.classList.contains('fixed') && (!cx.textContent || cx.textContent.trim() === '')) {
+      firstEditable = cc;
+      break;
+    }
+  }
+  // 2) if none empty, pick first non-fixed cell
+  if (firstEditable === null) {
+    for (let cc = 0; cc < WORD_LENGTH; cc++) {
+      const cx = getCell(row, cc);
+      if (!cx) continue;
+      if (!cx.classList.contains('fixed')) {
+        firstEditable = cc;
+        break;
+      }
+    }
+  }
+  // 3) fallback to last column if still null
+  if (firstEditable === null) firstEditable = Math.max(0, WORD_LENGTH - 1);
+  activeCol = Math.max(1, firstEditable);
   setActiveCol(activeCol);
 }
 
 function getCell(row, col) {
   return document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+}
+
+// find the next editable column (to the right) in a row, skipping fixed cells
+function nextEditableCol(row, fromCol) {
+  for (let c = fromCol + 1; c < WORD_LENGTH; c++) {
+    const cell = getCell(row, c);
+    if (!cell) continue;
+    // only consider non-fixed AND currently empty cells as next target
+    if (!cell.classList.contains('fixed') && (!cell.textContent || cell.textContent.trim() === '')) return c;
+  }
+  return null;
+}
+
+// find the previous editable column (to the left) in a row, skipping fixed cells
+function prevEditableCol(row, fromCol) {
+  for (let c = fromCol - 1; c >= 0; c--) {
+    const cell = getCell(row, c);
+    if (!cell) continue;
+    if (!cell.classList.contains('fixed')) return c;
+  }
+  return null;
 }
 
 function getRowText(row) {
@@ -347,7 +461,8 @@ document.addEventListener('keydown', (e) => {
     if (!cell) return;
     cell.textContent = ch;
     // move right
-    if (activeCol < WORD_LENGTH - 1) setActiveCol(activeCol + 1);
+    const next = nextEditableCol(currentTry, activeCol);
+    if (next !== null) setActiveCol(next);
     return;
   }
 
@@ -358,10 +473,11 @@ document.addEventListener('keydown', (e) => {
       cell.textContent = '';
       return;
     }
-    // otherwise move left and clear
-    if (activeCol > 0) {
-      setActiveCol(activeCol - 1);
-      const prev = getCell(currentTry, activeCol);
+    // otherwise move left and clear, but never move into a fixed column
+    const prevCol = prevEditableCol(currentTry, activeCol);
+    if (prevCol !== null) {
+      setActiveCol(prevCol);
+      const prev = getCell(currentTry, prevCol);
       if (prev) prev.textContent = '';
     }
     return;
@@ -479,6 +595,8 @@ function checkGuess(guess) {
       // block further input via isGameOver
       isGameOver = true;
     }
+    // show replay button for free-mode games
+    if (isGameOver && gameMode === 'free') showReplayButton(true);
   } else if (currentTry === MAX_TRIES - 1) {
     isGameOver = true;
     setMessage(`Perdu 😅 Le mot était ${SECRET}.`);
@@ -495,10 +613,25 @@ function checkGuess(guess) {
       // block further input via isGameOver
       isGameOver = true;
     }
+    if (isGameOver && gameMode === 'free') showReplayButton(true);
   } else {
     currentTry++;
     setMessage(`Essai ${currentTry + 1} sur ${MAX_TRIES}`);
     if (currentTryEl) currentTryEl.textContent = currentTry + 1;
+  }
+
+  // If there are correct letters, prefill them in the next row (editable)
+  if (!isGameOver && currentTry < MAX_TRIES) {
+    const nextRow = currentTry; // after increment above, currentTry points to next row
+    for (let col = 0; col < WORD_LENGTH; col++) {
+      if (result[col] === 'correct') {
+        const c = getCell(nextRow, col);
+        if (!c) continue;
+        // visually mark as prefilled but keep editable so player can change it
+        c.classList.add('prefilled');
+        c.textContent = upperSecret[col];
+      }
+    }
   }
 }
 
