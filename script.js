@@ -43,6 +43,10 @@ let dailyStreak = parseInt(localStorage.getItem("omsut_dailyStreak") || "0", 10)
 let bestStreak = parseInt(localStorage.getItem("omsut_bestDailyStreak") || "0", 10) || 0;
 // active column starts at 1 because column 0 is fixed (first letter)
 let activeCol = 1;
+// track which positions have been discovered as correct; true => auto-prefill on each new row
+let discoveredPositions = [];
+// Track game start time for speed badges
+let gameStartTime = null;
 
 const gridElement = document.getElementById("grid");
 // no separate input element: typing is done directly in the grid
@@ -125,10 +129,17 @@ async function loadWords() {
   // Choisir le mot selon le mode (daily/free)
   chooseSecretForMode();
 
+  // initialize discovered positions so first letter is known and others will be filled when discovered
+  discoveredPositions = new Array(WORD_LENGTH).fill(false);
+  if (WORD_LENGTH > 0) discoveredPositions[0] = true;
+
   // no separate input element; grid cells control length
 
   // Initialiser la grille selon la longueur déterminée
   initGrid();
+
+  // enable typing in the current row (prefill discovered letters)
+  setEditableRow(currentTry);
 
   // render keyboard (neutral keys) - do not dim letters here
   renderKeyboard();
@@ -155,6 +166,10 @@ async function loadWords() {
   setMessage(`Essai ${currentTry + 1} sur ${MAX_TRIES}`);
   console.log("Mot secret :", SECRET);
 }
+
+
+// Debug : pour vérifier en console
+console.log("Mot secret :", SECRET);
 
 // Normalize helper (already performed on load but useful for inputs)
 function normalizeWord(s) {
@@ -212,8 +227,13 @@ function resetGame(preserveMode = true) {
   // reset state
   currentTry = 0;
   isGameOver = false;
+  gameStartTime = Date.now(); // Start timer for speed badge
   // choose new secret according to current mode
   chooseSecretForMode();
+
+  // reset discovered positions (first letter is always revealed)
+  discoveredPositions = new Array(WORD_LENGTH).fill(false);
+  if (WORD_LENGTH > 0) discoveredPositions[0] = true;
 
   // update UI (no separate input element)
 
@@ -369,11 +389,12 @@ function setEditableRow(row) {
       c.textContent = SECRET ? SECRET[0] : c.textContent || '';
       continue;
     }
-    // if this cell was prefilled as fixed from a previous correct letter, keep it fixed
-    if (c.classList.contains('fixed')) {
-      c.tabIndex = -1;
-      // ensure text is set (in case it was added earlier)
-      c.textContent = c.textContent || '';
+    // if this position has been discovered previously, prefill it in every new row
+    if (discoveredPositions[col]) {
+      c.classList.add('prefilled');
+      c.classList.add('editable');
+      c.tabIndex = 0;
+      c.textContent = SECRET ? SECRET[col] : c.textContent || '';
       continue;
     }
     c.classList.add('editable');
@@ -536,6 +557,70 @@ function setMessage(text, isError = false) {
   messageEl.style.color = isError ? "#ff6b6b" : "#f5f5f5";
 }
 
+// --- Record game result and award badges ---
+async function recordGameAndCheckBadges(won, triesUsed, timeSeconds) {
+  try {
+    // Check if user is logged in via auth-helper
+    const token = (typeof getToken === 'function') ? getToken() : localStorage.getItem('omsut_token');
+    if (!token) return; // Not logged in, no need to record
+    
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+    
+    // Record the game
+    const gameRes = await fetch(API_BASE + '/api/games', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        mode: gameMode,
+        word: SECRET,
+        won: won ? 1 : 0,
+        tries_used: triesUsed,
+        time_seconds: timeSeconds
+      })
+    });
+    
+    if (!gameRes.ok) return;
+    
+    // If won, check for badge eligibility and award them
+    if (won) {
+      const badgesToAward = [];
+      
+      // First Win badge
+      const statsRes = await fetch(API_BASE + '/api/profile/stats', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (statsRes.ok) {
+        const stats = await statsRes.json();
+        if (stats.wins === 0) badgesToAward.push('First Win');
+      }
+      
+      // Streak badges
+      if (dailyStreak >= 3) badgesToAward.push('Streak 3');
+      if (dailyStreak >= 5) badgesToAward.push('Streak 5');
+      
+      // Speed Runner badge
+      if (timeSeconds && timeSeconds < 30) badgesToAward.push('Speed Runner');
+      
+      // Award all badges
+      for (const badgeName of badgesToAward) {
+        await fetch(API_BASE + '/api/profile/award-badge', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ badgeName })
+        }).catch(err => console.warn('Badge award failed', err));
+      }
+    }
+  } catch (err) {
+    console.warn('Record game error', err);
+  }
+}
+
 // --- Vérifie et colorie une proposition ---
 function checkGuess(guess) {
   const upperGuess = normalizeWord(guess);
@@ -580,6 +665,11 @@ function checkGuess(guess) {
     setMessage(`Bravo ! Le mot était bien ${SECRET}.`);
     // afficher l'essai courant (l'utilisateur vient de réussir cet essai)
     if (currentTryEl) currentTryEl.textContent = currentTry + 1;
+    
+    // Record win and award badges
+    const endTime = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : null;
+    recordGameAndCheckBadges(true, currentTry + 1, endTime).catch(err => console.warn('Badge award error', err));
+    
     // daily mode: update streak and mark as played today
     if (gameMode === "daily") {
       const today = getTodayStr();
@@ -600,6 +690,11 @@ function checkGuess(guess) {
   } else if (currentTry === MAX_TRIES - 1) {
     isGameOver = true;
     setMessage(`Perdu 😅 Le mot était ${SECRET}.`);
+    
+    // Record loss
+    const endTime = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : null;
+    recordGameAndCheckBadges(false, MAX_TRIES, endTime).catch(err => console.warn('Game record error', err));
+    
     // dernier essai
     if (currentTryEl) currentTryEl.textContent = MAX_TRIES;
     // daily mode: reset streak and mark as played today
@@ -619,15 +714,18 @@ function checkGuess(guess) {
     setMessage(`Essai ${currentTry + 1} sur ${MAX_TRIES}`);
     if (currentTryEl) currentTryEl.textContent = currentTry + 1;
   }
+  // Record discovered correct positions so they are prefilled on every subsequent row
+  for (let col = 0; col < WORD_LENGTH; col++) {
+    if (result[col] === 'correct') discoveredPositions[col] = true;
+  }
 
-  // If there are correct letters, prefill them in the next row (editable)
+  // If there are correct letters, ensure they will be prefilled in the next row(s)
   if (!isGameOver && currentTry < MAX_TRIES) {
     const nextRow = currentTry; // after increment above, currentTry points to next row
     for (let col = 0; col < WORD_LENGTH; col++) {
-      if (result[col] === 'correct') {
+      if (discoveredPositions[col]) {
         const c = getCell(nextRow, col);
         if (!c) continue;
-        // visually mark as prefilled but keep editable so player can change it
         c.classList.add('prefilled');
         c.textContent = upperSecret[col];
       }

@@ -1,0 +1,32 @@
+{
+	"name": "omsut",
+	"version": "1.0.0",
+	"description": "OMSUT: Word game with auth, profiles, badges, stats, leaderboard, admin panel",
+	"main": "server/index.js",
+	"scripts": {
+		"start": "node server/index.js",
+		"dev": "npm --prefix server run dev",
+		"heroku-postbuild": "echo 'Build complete'",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"engines": {
+		"node": ">=18.0.0",
+		"npm": ">=9.0.0"
+	},
+	"dependencies": {
+		"bcrypt": "^5.1.0",
+		"express": "^4.18.2",
+		"jsonwebtoken": "^9.0.0",
+		"multer": "^2.0.0",
+		"sqlite3": "^5.1.6"
+	},
+	"keywords": [
+		"word-game",
+		"wordle",
+		"motus",
+		"game"
+	],
+	"author": "",
+	"license": "MIT"
+}
+

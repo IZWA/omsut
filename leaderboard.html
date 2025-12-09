@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classement - OMSUT</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 40px; }
+    h1 { font-size: 2.5em; margin-bottom: 10px; color: #4ecdc4; }
+    .message { text-align: center; color: #ff6b6b; padding: 15px; font-size: 1.1em; }
+    .leaderboard { background: rgba(255, 255, 255, 0.05); border: 1px solid #4ecdc4; border-radius: 10px; overflow: hidden; }
+    .leaderboard-header {
+      display: grid;
+      grid-template-columns: 80px 1fr 100px 100px 100px;
+      gap: 20px;
+      padding: 20px;
+      background: #4ecdc4;
+      color: #1e1e1e;
+      font-weight: bold;
+      text-align: center;
+    }
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 100px 100px 100px;
+      gap: 20px;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      align-items: center;
+    }
+    .leaderboard-row:last-child { border-bottom: none; }
+    .leaderboard-row:hover { background: rgba(255, 255, 255, 0.08); }
+    .rank { 
+      font-size: 1.3em; 
+      font-weight: bold; 
+      text-align: center;
+      min-width: 50px;
+    }
+    .rank.top-1 { color: #ffd700; font-size: 1.5em; }
+    .rank.top-2 { color: #c0c0c0; font-size: 1.4em; }
+    .rank.top-3 { color: #cd7f32; font-size: 1.3em; }
+    .player-name { font-weight: bold; text-align: left; }
+    .stat { text-align: center; }
+    .nav-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+    .btn { 
+      padding: 12px 24px; 
+      background: #4ecdc4; 
+      color: #1e1e1e; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-weight: bold;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+    .btn:hover { background: #45b8b0; transform: scale(1.05); }
+    .btn-secondary { background: #666; color: #f5f5f5; }
+    .btn-secondary:hover { background: #777; }
+    .loading { text-align: center; color: #999; font-size: 1.2em; padding: 40px; }
+    .header-label { text-align: center; font-size: 0.9em; }
+    @media (max-width: 768px) {
+      .leaderboard-header, .leaderboard-row {
+        grid-template-columns: 60px 1fr 80px;
+        gap: 10px;
+        padding: 15px;
+        font-size: 0.9em;
+      }
+      .header-label { font-size: 0.8em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏆 Classement Global</h1>
+      <p style="color: #999; margin-top: 10px;">Top 20 meilleurs joueurs</p>
+    </header>
+
+    <div id="message" class="message" style="display:none;"></div>
+
+    <div id="leaderboard-container">
+      <div class="loading">Chargement du classement...</div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="window.location.href='index.html'">← Retour au jeu</button>
+      <button class="btn btn-secondary" onclick="window.location.href='stats.html'">Mes Stats</button>
+      <button class="btn btn-secondary" onclick="window.location.href='profile.html'">Profil</button>
+      <button class="btn btn-secondary" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+
+    function getToken() {
+      return localStorage.getItem('omsut_token');
+    }
+
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch(API_BASE + '/api/leaderboard?limit=20');
+        if (!res.ok) throw new Error('Failed to fetch leaderboard');
+        
+        const players = await res.json();
+        renderLeaderboard(players);
+      } catch (err) {
+        console.error(err);
+        showMessage('Erreur lors du chargement du classement', true);
+      }
+    }
+
+    function renderLeaderboard(players) {
+      if (!players || players.length === 0) {
+        document.getElementById('leaderboard-container').innerHTML = '<div class="loading">Aucun joueur enregistré</div>';
+        return;
+      }
+
+      let html = `
+        <div class="leaderboard">
+          <div class="leaderboard-header">
+            <div class="header-label">Rang</div>
+            <div class="header-label">Joueur</div>
+            <div class="header-label">Victoires</div>
+            <div class="header-label">Streak</div>
+            <div class="header-label">Best</div>
+          </div>
+      `;
+
+      players.forEach((player, index) => {
+        const rankClass = index === 0 ? 'top-1' : index === 1 ? 'top-2' : index === 2 ? 'top-3' : '';
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
+        
+        html += `
+          <div class="leaderboard-row">
+            <div class="rank ${rankClass}">${medal}</div>
+            <div class="player-name">${player.display_name || player.username}</div>
+            <div class="stat">${player.wins || 0}</div>
+            <div class="stat">${player.current_streak || 0}</div>
+            <div class="stat">${player.best_streak || 0}</div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      document.getElementById('leaderboard-container').innerHTML = html;
+    }
+
+    function showMessage(text, isError = false) {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.style.color = isError ? '#ff6b6b' : '#4ecdc4';
+      el.style.display = 'block';
+    }
+
+    function logout() {
+      localStorage.removeItem('omsut_token');
+      window.location.href = 'auth.html';
+    }
+
+    loadLeaderboard();
+  </script>
+</body>
+</html>

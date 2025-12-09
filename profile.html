@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mon Profil — OMSUT</title>
+  <link rel="stylesheet" href="profile.css" />
+</head>
+<body>
+  <div class="profile-container">
+    <div class="profile-header">
+      <h1>OMSUT</h1>
+      <p class="subtitle">Mon Profil</p>
+    </div>
+
+    <div id="auth-check" style="text-align: center; padding: 20px;">
+      <p>Vérification de l'authentification...</p>
+    </div>
+
+    <div id="profile-content" style="display: none;">
+      <!-- Profile Section -->
+      <div class="profile-section">
+        <h2>Informations Personnelles</h2>
+        <div class="profile-info">
+          <img id="profile-photo" src="" alt="Photo de profil" class="profile-photo" />
+          <div class="profile-details">
+            <p><strong>Pseudo:</strong> <span id="username"></span></p>
+            <p><strong>Nom affiché:</strong> <span id="display-name"></span></p>
+            <p><strong>Membre depuis:</strong> <span id="created-at"></span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Section -->
+      <div class="profile-section">
+        <h2>Modifier le Profil</h2>
+        <div class="form-group">
+          <label for="edit-display-name">Nouveau nom affiché</label>
+          <input id="edit-display-name" type="text" placeholder="Votre nom visible" />
+          <button id="update-name-btn" class="btn btn-primary">Mettre à jour</button>
+          <p id="update-message" class="message"></p>
+        </div>
+      </div>
+
+      <!-- Photo Upload Section -->
+      <div class="profile-section">
+        <h2>Photo de Profil</h2>
+        <div class="form-group">
+          <input id="photo-file" type="file" accept="image/*" />
+          <button id="upload-photo-btn" class="btn btn-primary">Téléverser une photo</button>
+          <p id="photo-message" class="message"></p>
+        </div>
+      </div>
+
+      <!-- Badges Section -->
+      <div class="profile-section">
+        <h2>Badges</h2>
+        <div id="badges-container" class="badges-grid">
+          <p style="text-align: center; color: #999;">Aucun badge pour le moment</p>
+        </div>
+      </div>
+
+      <!-- Actions Section -->
+      <div class="profile-section actions">
+        <a href="index.html" class="btn btn-secondary">← Retour au Jeu</a>
+        <a href="stats.html" class="btn btn-secondary">📊 Mes Stats</a>
+        <a href="leaderboard.html" class="btn btn-secondary">🏆 Classement</a>
+        <button id="logout-btn" class="btn btn-danger">Se Déconnecter</button>
+      </div>
+    </div>
+
+    <p id="message" class="message"></p>
+  </div>
+
+  <script src="profile.js"></script>
+</body>
+</html>

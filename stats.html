@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes Statistiques - OMSUT</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 40px; }
+    h1 { font-size: 2.5em; margin-bottom: 10px; color: #4ecdc4; }
+    .message { text-align: center; color: #ff6b6b; padding: 15px; font-size: 1.1em; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #4ecdc4;
+      padding: 25px;
+      border-radius: 10px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .stat-card:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-5px); }
+    .stat-value { font-size: 3em; font-weight: bold; color: #4ecdc4; margin-bottom: 10px; }
+    .stat-label { color: #999; font-size: 0.9em; text-transform: uppercase; }
+    .games-list { background: rgba(255, 255, 255, 0.05); border: 1px solid #4ecdc4; border-radius: 10px; padding: 25px; }
+    .games-list h3 { margin-bottom: 20px; color: #4ecdc4; }
+    .game-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .game-row:last-child { border-bottom: none; }
+    .game-result { font-weight: bold; }
+    .game-result.win { color: #51cf66; }
+    .game-result.loss { color: #ff6b6b; }
+    .nav-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+    .btn { 
+      padding: 12px 24px; 
+      background: #4ecdc4; 
+      color: #1e1e1e; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-weight: bold;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+    .btn:hover { background: #45b8b0; transform: scale(1.05); }
+    .btn-secondary { background: #666; color: #f5f5f5; }
+    .btn-secondary:hover { background: #777; }
+    .loading { text-align: center; color: #999; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Mes Statistiques</h1>
+    </header>
+
+    <div id="message" class="message" style="display:none;"></div>
+
+    <div id="stats-container">
+      <div class="loading">Chargement des statistiques...</div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="window.location.href='index.html'">← Retour au jeu</button>
+      <button class="btn btn-secondary" onclick="window.location.href='profile.html'">Profil</button>
+      <button class="btn btn-secondary" onclick="window.location.href='leaderboard.html'">Classement</button>
+      <button class="btn btn-secondary" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+
+    function getToken() {
+      return localStorage.getItem('omsut_token');
+    }
+
+    async function loadStats() {
+      const token = getToken();
+      if (!token) {
+        showMessage('Vous devez être connecté.', true);
+        setTimeout(() => window.location.href = 'auth.html', 2000);
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + '/api/profile/stats', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        const stats = await res.json();
+
+        renderStats(stats);
+      } catch (err) {
+        console.error(err);
+        showMessage('Erreur lors du chargement des statistiques', true);
+      }
+    }
+
+    function renderStats(stats) {
+      const html = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${stats.total_games || 0}</div>
+            <div class="stat-label">Parties Jouées</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.wins || 0}</div>
+            <div class="stat-label">Victoires</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.current_streak || 0}</div>
+            <div class="stat-label">Streak Actuel</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.best_streak || 0}</div>
+            <div class="stat-label">Meilleur Streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.best_time_seconds ? Math.floor(stats.best_time_seconds) + 's' : '-'}</div>
+            <div class="stat-label">Meilleur Temps</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.total_games > 0 ? Math.round((stats.wins / stats.total_games) * 100) : 0}%</div>
+            <div class="stat-label">Taux de Victoire</div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('stats-container').innerHTML = html;
+    }
+
+    function showMessage(text, isError = false) {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.style.color = isError ? '#ff6b6b' : '#4ecdc4';
+      el.style.display = 'block';
+    }
+
+    function logout() {
+      localStorage.removeItem('omsut_token');
+      window.location.href = 'auth.html';
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>
