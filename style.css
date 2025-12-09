@@ -1,0 +1,230 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Background image + subtle dark gradient for readability.
+     Put the attached image at `assets/bg.jpg` relative to the project root. */
+  background-image: linear-gradient(rgba(11,16,32,0.55), rgba(11,16,32,0.55)), url("assets/bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-blend-mode: overlay;
+  color: #f5f5f5;
+}
+
+.app {
+  width: 100%;
+  max-width: 640px;
+  padding: 18px;
+  border-radius: 12px;
+  /* Semi-transparent panel so background is visible but content stays readable */
+  background: rgba(21, 26, 48, 0.78);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px) saturate(120%);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 2px;
+  font-size: 1.4rem;
+}
+
+.subtitle {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.grid {
+  display: grid;
+  /* le nombre de colonnes est contrôlé par la variable CSS --word-length */
+  grid-template-columns: repeat(var(--word-length, 6), 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #dbe6ff;
+  font-size: 0.9rem;
+}
+
+.status .info strong {
+  color: #ffffff;
+  margin-left: 6px;
+}
+
+.modes {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.mode-btn {
+  background: #0f1724;
+  border: 1px solid #2b3350;
+  color: #dbe6ff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.mode-btn input[type="radio"] {
+  margin-right: 6px;
+}
+
+.mode-btn input[type="radio"]:checked + .mode-btn {
+  background: #18304a;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  color: #cfe6ff;
+  margin-bottom: 12px;
+}
+
+.stats .info strong { color: #fff; margin-left: 6px; }
+
+/* debug styles removed */
+
+.keyboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.keyboard .key {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: #0f1724;
+  color: #dbe6ff;
+  border: 1px solid #27324a;
+  font-weight: 700;
+  user-select: none;
+  font-size: 0.95rem;
+}
+
+.keyboard .key.dim,
+.keyboard .key.absent {
+  opacity: 0.28;
+  filter: grayscale(60%);
+}
+
+.keyboard .key.present {
+  background: #fdd835;
+  color: #151515;
+}
+
+.keyboard .key.correct {
+  background: #e53935;
+  color: #fff;
+}
+
+.cell {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  border: 1px solid #333a5a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #15192a;
+  /* empêcher le retour à la ligne à l'intérieur d'une cellule */
+  white-space: nowrap;
+}
+
+.cell.editable { cursor: text; }
+.cell:focus {
+  outline: 2px solid #fdd835;
+  outline-offset: 2px;
+}
+
+/* États des lettres */
+
+.cell.correct {
+  background: #e53935; /* bien placée (rouge) */
+  border-color: #e53935;
+}
+
+.cell.present {
+  background: #fdd835; /* présente mais mal placée (jaune) */
+  border-color: #fdd835;
+  color: #151515;
+}
+
+.cell.absent {
+  background: #424868;
+  border-color: #424868;
+  opacity: 0.9;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+#submit-btn { display:none; }
+
+.message {
+  min-height: 20px;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-top: 4px;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 720px) {
+  .app { max-width: 520px; padding: 14px; }
+  h1 { font-size: 1.25rem; }
+  .subtitle { font-size: 0.82rem; }
+  .cell { font-size: 0.98rem; }
+  .keyboard .key { width: 28px; height: 28px; font-size: 0.9rem; }
+}
+
+@media (max-width: 520px) {
+  .app { max-width: 96%; padding: 12px; border-radius: 10px; }
+  h1 { font-size: 1.1rem; }
+  .subtitle { font-size: 0.8rem; }
+  .grid { gap: 3px; margin-bottom: 10px; }
+  .cell { font-size: 0.9rem; border-radius: 5px; }
+  .keyboard { gap: 3px; margin-top: 8px; }
+  .keyboard .key { width: 26px; height: 26px; font-size: 0.85rem; }
+  .status { font-size: 0.82rem; gap: 8px; }
+}
+
+@media (max-width: 360px) {
+  .app { padding: 8px; }
+  .cell { font-size: 0.82rem; }
+  .keyboard .key { width: 24px; height: 24px; font-size: 0.78rem; }
+  .subtitle { display: none; }
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OMSUT</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <h1>OMSUT</h1>
+    <p class="subtitle">Devine le mot — amuse-toi bien !</p>
+
+    <div class="status">
+      <span class="info">Longueur : <strong id="word-length">6</strong> lettres</span>
+      <span class="info">Essai : <strong id="current-try">1</strong>/<strong id="max-tries">6</strong></span>
+    </div>
+
+    <div class="modes">
+      <label class="mode-btn">
+        <input type="radio" name="mode" value="daily" id="mode-daily" checked /> Mot du jour
+      </label>
+      <label class="mode-btn">
+        <input type="radio" name="mode" value="free" id="mode-free" /> Libre
+      </label>
+    </div>
+
+    <div class="stats">
+      <span class="info">Streak: <strong id="daily-streak">0</strong></span>
+      <span class="info">Meilleur: <strong id="best-streak">0</strong></span>
+    </div>
+
+    
+
+    <div id="grid" class="grid"></div>
+
+    <div class="controls"></div>
+
+    <div id="keyboard" class="keyboard" aria-hidden="false"></div>
+
+    <p id="message" class="message"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
