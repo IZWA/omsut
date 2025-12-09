@@ -116,12 +116,20 @@
             <div class="stat-label">Victoires</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">${stats.current_streak || 0}</div>
-            <div class="stat-label">Streak Actuel</div>
+            <div class="stat-value">${stats.daily_current_streak || 0}</div>
+            <div class="stat-label">Streak Quotidien</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">${stats.best_streak || 0}</div>
-            <div class="stat-label">Meilleur Streak</div>
+            <div class="stat-value">${stats.daily_best_streak || 0}</div>
+            <div class="stat-label">Meilleur Streak Quotidien</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.free_current_streak || 0}</div>
+            <div class="stat-label">Streak Libre</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.free_best_streak || 0}</div>
+            <div class="stat-label">Meilleur Streak Libre</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${stats.best_time_seconds ? Math.floor(stats.best_time_seconds) + 's' : '-'}</div>

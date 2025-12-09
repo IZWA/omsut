@@ -1,5 +1,6 @@
 // Append simplified profile management to game page
-// Note: API_BASE is already defined in script.js
+// API_BASE configuration - use window to ensure it's global
+window.API_BASE = window.API_BASE || ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '');
 
 function getToken() {
   return localStorage.getItem('omsut_token');
@@ -21,35 +22,54 @@ async function apiFetch(path, opts = {}) {
     headers['Content-Type'] = headers['Content-Type'] || 'application/json';
   }
 
-  const res = await fetch(API_BASE + path, Object.assign({}, opts, { headers, body }));
+  const res = await fetch(window.API_BASE + path, Object.assign({}, opts, { headers, body }));
   return res;
 }
 
 // Show profile or login link
 async function updateAuthUI() {
+  console.log('[AUTH] updateAuthUI called');
+  
   const token = getToken();
+  console.log('[AUTH] Token:', token ? 'exists' : 'none');
+  
   const userProfileEl = document.getElementById('user-profile');
   const loginLink = document.getElementById('login-link');
   const profileNameSmall = document.getElementById('profile-name-small');
   const profilePhotoSmall = document.getElementById('profile-photo-small');
 
+  console.log('[AUTH] Elements:', {
+    userProfileEl: !!userProfileEl,
+    loginLink: !!loginLink,
+    profileNameSmall: !!profileNameSmall,
+    profilePhotoSmall: !!profilePhotoSmall
+  });
+
   if (!token) {
     // Not authenticated: show login link
     if (userProfileEl) userProfileEl.style.display = 'none';
     if (loginLink) loginLink.style.display = 'inline-block';
+    console.log('[AUTH] No token, showing login link');
     return;
   }
 
   // Authenticated: fetch and show profile
   try {
+    console.log('[AUTH] Fetching profile...');
     const res = await apiFetch('/api/profile');
     if (!res.ok) throw new Error('Not authenticated');
     const data = await res.json();
 
-    console.log('Profile data:', data);
+    console.log('[AUTH] Profile data:', data);
 
-    if (userProfileEl) userProfileEl.style.display = 'flex';
-    if (loginLink) loginLink.style.display = 'none';
+    if (userProfileEl) {
+      userProfileEl.style.display = 'flex';
+      console.log('[AUTH] User profile shown');
+    }
+    if (loginLink) {
+      loginLink.style.display = 'none';
+      console.log('[AUTH] Login link hidden');
+    }
     
     // Set username/display name
     if (profileNameSmall) {
@@ -93,34 +113,34 @@ async function updateAuthUI() {
   }
 }
 
-if (document.getElementById('logout-btn')) {
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    setToken(null);
-    window.location.reload();
-  });
+// Setup logout button handler
+function setupLogoutHandler() {
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn && !logoutBtn.dataset.handlerAdded) {
+    logoutBtn.dataset.handlerAdded = 'true';
+    logoutBtn.addEventListener('click', () => {
+      console.log('[AUTH] Logout clicked');
+      setToken(null);
+      window.location.reload();
+    });
+  }
 }
 
 // Initialize auth UI when DOM is ready
 function initAuthUI() {
-  console.log('Initializing auth UI...');
-  updateAuthUI();
+  console.log('[AUTH] Initializing auth UI...');
+  setupLogoutHandler();
+  updateAuthUI().catch(err => console.error('[AUTH] Update failed:', err));
 }
 
-// Wait for DOM to be fully loaded before initializing
+// Multiple initialization strategies to ensure it works
 if (document.readyState === 'loading') {
+  // DOM still loading
   document.addEventListener('DOMContentLoaded', initAuthUI);
 } else {
   // DOM already loaded
-  initAuthUI();
+  setTimeout(initAuthUI, 0);
 }
 
-// Also try with a small delay to be safe
-setTimeout(initAuthUI, 100);
-
-// Redirect to auth if user clicks login link but prefers to start from game
-document.addEventListener('DOMContentLoaded', () => {
-  const token = getToken();
-  if (!token && location.pathname.endsWith('index.html')) {
-    // User can play without auth - that's fine
-  }
-});
+// Fallback: try again after a short delay
+setTimeout(initAuthUI, 200);

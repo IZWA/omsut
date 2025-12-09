@@ -181,9 +181,38 @@ function getTodayStr() {
   return d.toISOString().slice(0, 10);
 }
 
-function updateStreakUI() {
-  if (dailyStreakEl) dailyStreakEl.textContent = dailyStreak;
-  if (bestStreakEl) bestStreakEl.textContent = bestStreak;
+async function updateStreakUI() {
+  // Check if user is logged in
+  const token = (typeof getToken === 'function') ? getToken() : localStorage.getItem('omsut_token');
+  if (!token) {
+    // Not logged in, show 0
+    if (dailyStreakEl) dailyStreakEl.textContent = '0';
+    if (bestStreakEl) bestStreakEl.textContent = '0';
+    return;
+  }
+  
+  try {
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+    const res = await fetch(API_BASE + '/api/profile/stats', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (!res.ok) throw new Error('Failed to fetch stats');
+    const stats = await res.json();
+    
+    // Display streak based on current mode
+    if (gameMode === 'daily') {
+      if (dailyStreakEl) dailyStreakEl.textContent = stats.daily_current_streak || 0;
+      if (bestStreakEl) bestStreakEl.textContent = stats.daily_best_streak || 0;
+    } else {
+      if (dailyStreakEl) dailyStreakEl.textContent = stats.free_current_streak || 0;
+      if (bestStreakEl) bestStreakEl.textContent = stats.free_best_streak || 0;
+    }
+  } catch (err) {
+    console.warn('Error loading streak stats:', err);
+    if (dailyStreakEl) dailyStreakEl.textContent = '0';
+    if (bestStreakEl) bestStreakEl.textContent = '0';
+  }
 }
 
 function checkDailyPlayed() {
@@ -298,14 +327,32 @@ if (replayBtn) {
 }
 
 if (newWordBtn) {
-  newWordBtn.addEventListener('click', () => {
+  newWordBtn.addEventListener('click', async () => {
     if (gameMode !== 'free') {
       setMessage('Bouton "Nouveau mot" disponible uniquement en mode Libre.', true);
       return;
     }
     // ask for confirmation before resetting the current free game
-    const ok = window.confirm('Voulez-vous vraiment changer de mot ? Votre progression actuelle sera réinitialisée.');
+    const ok = window.confirm('Voulez-vous vraiment changer de mot ? Votre progression actuelle et votre streak seront réinitialisés.');
     if (!ok) return;
+    
+    // Reset free mode streak on server
+    const token = (typeof getToken === 'function') ? getToken() : localStorage.getItem('omsut_token');
+    if (token) {
+      try {
+        const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+        await fetch(API_BASE + '/api/profile/reset-free-streak', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to reset free streak:', err);
+      }
+    }
+    
     // start a fresh free game with a new secret
     resetGame();
     setMessage('Nouveau mot généré — bonne chance !');
@@ -584,6 +631,15 @@ async function recordGameAndCheckBadges(won, triesUsed, timeSeconds) {
     
     if (!gameRes.ok) return;
     
+    // Get updated stats from response
+    const gameData = await gameRes.json();
+    const updatedStats = gameData.stats;
+    
+    // Update streak display in the UI
+    if (updatedStats) {
+      await updateStreakUI();
+    }
+    
     // If won, check for badge eligibility and award them
     if (won) {
       const badgesToAward = [];
@@ -597,7 +653,8 @@ async function recordGameAndCheckBadges(won, triesUsed, timeSeconds) {
         if (stats.wins === 0) badgesToAward.push('First Win');
       }
       
-      // Streak badges
+      // Streak badges - use the correct streak based on mode
+      const dailyStreak = updatedStats ? updatedStats.daily_current_streak : 0;
       if (dailyStreak >= 3) badgesToAward.push('Streak 3');
       if (dailyStreak >= 5) badgesToAward.push('Streak 5');
       

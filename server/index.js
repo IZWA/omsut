@@ -185,12 +185,86 @@ app.post('/api/games', authenticate, (req, res) => {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
+  // Insert game record
   db.run('INSERT INTO games (user_id, mode, word, won, tries_used, time_seconds) VALUES (?, ?, ?, ?, ?, ?)',
     [uid, mode, word, won ? 1 : 0, tries_used || null, time_seconds || null],
     function(err) {
       if (err) return res.status(500).json({ error: 'DB error' });
-      res.json({ ok: true, gameId: this.lastID });
+      
+      // Update user_stats
+      db.get('SELECT * FROM user_stats WHERE user_id = ?', [uid], (err2, stats) => {
+        if (err2) return res.status(500).json({ error: 'DB error' });
+        
+        if (!stats) {
+          // Create initial stats
+          const initial = {
+            total_games: 1,
+            wins: won ? 1 : 0,
+            daily_current_streak: (won && mode === 'daily') ? 1 : 0,
+            daily_best_streak: (won && mode === 'daily') ? 1 : 0,
+            free_current_streak: (won && mode === 'free') ? 1 : 0,
+            free_best_streak: (won && mode === 'free') ? 1 : 0,
+            best_time_seconds: (won && time_seconds) ? time_seconds : null
+          };
+          
+          db.run('INSERT INTO user_stats (user_id, total_games, wins, daily_current_streak, daily_best_streak, free_current_streak, free_best_streak, best_time_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [uid, initial.total_games, initial.wins, initial.daily_current_streak, initial.daily_best_streak, initial.free_current_streak, initial.free_best_streak, initial.best_time_seconds],
+            (err3) => {
+              if (err3) console.error('Stats insert error:', err3);
+              res.json({ ok: true, gameId: this.lastID, stats: initial });
+            });
+        } else {
+          // Update existing stats
+          const newTotalGames = stats.total_games + 1;
+          const newWins = stats.wins + (won ? 1 : 0);
+          
+          // Update streaks based on mode
+          let newDailyCurrentStreak = stats.daily_current_streak || 0;
+          let newDailyBestStreak = stats.daily_best_streak || 0;
+          let newFreeCurrentStreak = stats.free_current_streak || 0;
+          let newFreeBestStreak = stats.free_best_streak || 0;
+          
+          if (mode === 'daily') {
+            newDailyCurrentStreak = won ? newDailyCurrentStreak + 1 : 0;
+            newDailyBestStreak = Math.max(newDailyBestStreak, newDailyCurrentStreak);
+          } else if (mode === 'free') {
+            newFreeCurrentStreak = won ? newFreeCurrentStreak + 1 : 0;
+            newFreeBestStreak = Math.max(newFreeBestStreak, newFreeCurrentStreak);
+          }
+          
+          const newBestTime = (won && time_seconds && (!stats.best_time_seconds || time_seconds < stats.best_time_seconds)) 
+            ? time_seconds 
+            : stats.best_time_seconds;
+          
+          db.run('UPDATE user_stats SET total_games = ?, wins = ?, daily_current_streak = ?, daily_best_streak = ?, free_current_streak = ?, free_best_streak = ?, best_time_seconds = ? WHERE user_id = ?',
+            [newTotalGames, newWins, newDailyCurrentStreak, newDailyBestStreak, newFreeCurrentStreak, newFreeBestStreak, newBestTime, uid],
+            (err3) => {
+              if (err3) console.error('Stats update error:', err3);
+              res.json({ ok: true, gameId: this.lastID, stats: {
+                total_games: newTotalGames,
+                wins: newWins,
+                daily_current_streak: newDailyCurrentStreak,
+                daily_best_streak: newDailyBestStreak,
+                free_current_streak: newFreeCurrentStreak,
+                free_best_streak: newFreeBestStreak,
+                best_time_seconds: newBestTime
+              }});
+            });
+        }
+      });
     });
+});
+
+// Reset free mode streak
+app.post('/api/profile/reset-free-streak', authenticate, (req, res) => {
+  const uid = req.userId;
+  db.run('UPDATE user_stats SET free_current_streak = 0 WHERE user_id = ?', [uid], (err) => {
+    if (err) {
+      console.error('Reset free streak error:', err);
+      return res.status(500).json({ error: 'DB error' });
+    }
+    res.json({ ok: true });
+  });
 });
 
 // Get user stats

@@ -123,35 +123,33 @@ GET    /api/admin/users              # Liste users (admin)
 
 ---
 
-### 6. 🚀 Déploiement Heroku
+### 6. 🚀 Déploiement Render
 
 **Fichiers créés:**
-- `Procfile` - Commande de démarrage pour Heroku
-- `.env.example` - Template des variables d'env
-- `DEPLOY-HEROKU.md` - Guide déploiement rapide
-- `DEPLOYMENT.md` - Documentation complète
+- `render.yaml` - Blueprint configuration pour Render
+- `.node-version` - Spécifie version Node.js
+- `DEPLOY-RENDER.md` - Guide déploiement rapide
+- `DEPLOYMENT.md` - Documentation complète Heroku (legacy)
 
 **Configuration:**
-- Express sert frontend + backend dans 1 seul dyno
-- SQLite stocké localement (perdu au redémarrage)
+- Express sert frontend + backend dans 1 seul service
+- SQLite stocké localement (perdu au redémarrage sur free tier)
 - PostgreSQL optionnel pour production
 
 **Variables d'env:**
 ```bash
-OMSUT_JWT_SECRET="votre-clé-secrète"
+OMSUT_JWT_SECRET="votre-clé-secrète" (auto-généré)
 OMSUT_ADMINS="admin,alice"
-PORT=3000 (auto Heroku)
+NODE_ENV=production
+PORT=10000 (auto Render)
 ```
 
-**Architecture all-in-one:**
-```
-Heroku Dyno
-├── Express.js
-│   ├── /api/* (API)
-│   ├── /uploads/* (Photos)
-│   └── /* (Frontend statique)
-└── SQLite database
-```
+**Avantages Render:**
+- ✅ Free tier 750h/mois
+- ✅ Blueprint (Infrastructure as Code)
+- ✅ PostgreSQL gratuit
+- ✅ Auto-deploy depuis GitHub
+- ✅ SSL automatique
 
 ---
 
@@ -227,25 +225,21 @@ python -m http.server 8000
 
 ---
 
-## Déployer sur Heroku
+## Déployer sur Render
 
 ```bash
-# 1. Login
-heroku login
+# 1. Push vers GitHub
+git add .
+git commit -m "OMSUT complete"
+git push origin main
 
-# 2. Créer app
-heroku create omsut-game
+# 2. Sur Render.com
+# - New → Blueprint
+# - Connectez repo: IZWA/omsut
+# - Deploy
 
-# 3. Secrets
-heroku config:set OMSUT_JWT_SECRET="secret2024" --app omsut-game
-heroku config:set OMSUT_ADMINS="admin" --app omsut-game
-
-# 4. Deploy
-git push heroku main
-
-# 5. Vérifier
-heroku open --app omsut-game
-heroku logs --tail --app omsut-game
+# 3. Votre app sera à:
+# https://omsut.onrender.com
 ```
 
 ---

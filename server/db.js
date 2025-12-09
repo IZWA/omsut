@@ -54,8 +54,10 @@ function init() {
       user_id INTEGER PRIMARY KEY,
       total_games INTEGER DEFAULT 0,
       wins INTEGER DEFAULT 0,
-      current_streak INTEGER DEFAULT 0,
-      best_streak INTEGER DEFAULT 0,
+      daily_current_streak INTEGER DEFAULT 0,
+      daily_best_streak INTEGER DEFAULT 0,
+      free_current_streak INTEGER DEFAULT 0,
+      free_best_streak INTEGER DEFAULT 0,
       best_time_seconds INTEGER,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
