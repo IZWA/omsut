@@ -9,6 +9,10 @@
   <title>OMSUT - Accueil</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    body {
+      padding-top: 60px;
+    }
+    
     .home-container {
       min-height: 100vh;
       display: flex;
@@ -31,13 +35,32 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
       font-weight: 800;
+      position: relative;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .home-title::before {
+      content: 'OMSUT';
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: -1;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: blur(10px);
+      transform: scale(1.05);
     }
     
     .home-subtitle {
-      font-size: 1.2rem;
-      color: #dbe6ff;
+      font-size: 1.3rem;
+      color: #ffffff;
       margin-bottom: 3rem;
-      opacity: 0.9;
+      opacity: 1;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     
     .mode-cards {
@@ -150,6 +173,22 @@
   </style>
 </head>
 <body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">🏠 OMSUT</a>
+      <div class="navbar-menu">
+        <div id="user-profile" style="display: none;">
+          <img id="profile-photo-small" src="" alt="Photo" />
+          <span id="profile-name-small"></span>
+          <a id="profile-link" href="profile.html" class="navbar-link">Profil</a>
+          <a id="stats-link" href="stats.html" class="navbar-link">Stats</a>
+          <a id="leaderboard-link" href="leaderboard.html" class="navbar-link">Classement</a>
+          <button id="logout-btn" class="navbar-btn">Déconnecter</button>
+        </div>
+        <a id="login-link" href="auth.html" class="navbar-btn" style="display:inline-block;">Se connecter</a>
+      </div>
+    </div>
+  </nav>
   <div class="home-container">
     <div class="home-content">
       <h1 class="home-title">OMSUT</h1>

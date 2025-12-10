@@ -9,14 +9,25 @@
   <link rel="stylesheet" href="profile.css" />
 </head>
 <body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">🏠 OMSUT</a>
+      <div class="navbar-menu">
+        <div id="user-profile-nav" style="display: none;">
+          <img id="profile-photo-small-nav" src="" alt="Photo" />
+          <span id="profile-name-small-nav"></span>
+          <a href="profile.html" class="navbar-link" style="background: rgba(102, 126, 234, 0.15);">Profil</a>
+          <a id="stats-link" href="stats.html" class="navbar-link">Stats</a>
+          <a id="leaderboard-link" href="leaderboard.html" class="navbar-link">Classement</a>
+          <button id="logout-btn-nav" class="navbar-btn">Déconnecter</button>
+        </div>
+        <a id="login-link" href="auth.html" class="navbar-btn" style="display:inline-block;">Se connecter</a>
+      </div>
+    </div>
+  </nav>
   <div class="profile-container">
     <div class="profile-header">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <a href="home.html" style="color: white; text-decoration: none; font-size: 1.5rem;">←</a>
-        <h1 style="margin: 0;">OMSUT</h1>
-        <div style="width: 1.5rem;"></div>
-      </div>
-      <p class="subtitle">Mon Profil</p>
+      <h1 style="margin: 0;">Mon Profil</h1>
     </div>
 
     <div id="auth-check" style="text-align: center; padding: 20px;">

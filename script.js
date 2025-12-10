@@ -186,6 +186,38 @@ function getTodayStr() {
   return d.toISOString().slice(0, 10);
 }
 
+function showRevealAnswerPrompt() {
+  const messageEl = document.getElementById("message");
+  if (!messageEl) return;
+  
+  // Create prompt with buttons
+  const promptHTML = `
+    <div style="margin-top: 12px;">
+      <p style="margin-bottom: 10px;">Voulez-vous connaître la réponse ?</p>
+      <button id="reveal-yes" class="mode-btn" style="margin-right: 8px; background: linear-gradient(135deg, #667eea, #764ba2);">Oui, montrer</button>
+      <button id="reveal-no" class="mode-btn" style="background: rgba(255, 255, 255, 0.1);">Non merci</button>
+    </div>
+  `;
+  
+  messageEl.innerHTML = `Perdu 😅 ${promptHTML}`;
+  
+  // Add event listeners
+  const yesBtn = document.getElementById("reveal-yes");
+  const noBtn = document.getElementById("reveal-no");
+  
+  if (yesBtn) {
+    yesBtn.addEventListener("click", () => {
+      setMessage(`Perdu 😅 Le mot était ${SECRET}.`);
+    });
+  }
+  
+  if (noBtn) {
+    noBtn.addEventListener("click", () => {
+      setMessage(`Perdu 😅 Revenez demain pour un nouveau défi !`);
+    });
+  }
+}
+
 async function updateStreakUI() {
   // Check if user is logged in
   const token = (typeof getToken === 'function') ? getToken() : localStorage.getItem('omsut_token');
@@ -225,9 +257,28 @@ function checkDailyPlayed() {
     return false;
   }
   const last = localStorage.getItem("omsut_lastDailyPlayed") || "";
+  const lastResult = localStorage.getItem("omsut_lastDailyResult") || "";
   const today = getTodayStr();
   if (last === today) {
     isGameOver = true;
+    
+    // Show custom message based on result
+    const messageBox = document.getElementById("daily-played-message");
+    const messageText = document.getElementById("daily-message-text");
+    if (messageBox && messageText) {
+      if (lastResult === "win") {
+        messageText.textContent = "🎉 Vous avez déjà gagné aujourd'hui ! Revenez demain pour un nouveau défi.";
+        messageText.style.color = "#51cf66";
+      } else if (lastResult === "loss") {
+        messageText.textContent = "😔 Vous avez déjà perdu aujourd'hui. Revenez demain pour retenter votre chance !";
+        messageText.style.color = "#ff6b6b";
+      } else {
+        messageText.textContent = "Vous avez déjà joué aujourd'hui, revenez demain !";
+        messageText.style.color = "#dbe6ff";
+      }
+      messageBox.style.display = "block";
+    }
+    
     setMessage("Vous avez déjà joué aujourd'hui, revenez demain !", true);
     updateStreakUI();
     return true;
@@ -369,34 +420,50 @@ function renderKeyboard() {
   if (!keyboardEl) return;
   keyboardEl.innerHTML = "";
   
-  // Ajouter les lettres A-Z
-  for (let i = 0; i < 26; i++) {
-    const ch = String.fromCharCode(65 + i);
-    const k = document.createElement("div");
-    k.className = "key";
-    k.dataset.letter = ch;
-    k.textContent = ch;
-    
-    // Gérer les clics/touches sur le clavier virtuel
-    k.addEventListener('click', (e) => {
-      e.preventDefault();
-      handleVirtualKeyPress(ch);
+  // Disposition AZERTY
+  const azertyLayout = [
+    ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
+    ['W', 'X', 'C', 'V', 'B', 'N']
+  ];
+  
+  // Créer les rangées du clavier
+  azertyLayout.forEach((row, rowIndex) => {
+    row.forEach(ch => {
+      const k = document.createElement("div");
+      k.className = "key";
+      k.dataset.letter = ch;
+      k.textContent = ch;
+      
+      // Gérer les clics/touches sur le clavier virtuel
+      k.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleVirtualKeyPress(ch);
+      });
+      
+      // Améliorer le feedback tactile
+      k.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        k.style.opacity = '0.7';
+      });
+      
+      k.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        k.style.opacity = '1';
+        handleVirtualKeyPress(ch);
+      });
+      
+      keyboardEl.appendChild(k);
     });
     
-    // Améliorer le feedback tactile
-    k.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      k.style.opacity = '0.7';
-    });
-    
-    k.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      k.style.opacity = '1';
-      handleVirtualKeyPress(ch);
-    });
-    
-    keyboardEl.appendChild(k);
-  }
+    // Ajouter un saut de ligne visuel après chaque rangée (sauf la dernière)
+    if (rowIndex < azertyLayout.length - 1) {
+      const br = document.createElement("div");
+      br.style.width = "100%";
+      br.style.height = "0";
+      keyboardEl.appendChild(br);
+    }
+  });
   
   // Ajouter le bouton Backspace
   const backspaceKey = document.createElement("div");
@@ -641,13 +708,26 @@ function prevEditableCol(row, fromCol) {
   return null;
 }
 
-// Restore prefilled letters for discovered positions
+// Restore prefilled letters for discovered positions only if row is empty (except first letter)
 function restorePrefilledLetters(row) {
-  for (let col = 0; col < WORD_LENGTH; col++) {
-    if (discoveredPositions[col]) {
-      const cell = getCell(row, col);
-      if (cell && (!cell.textContent || cell.textContent.trim() === '')) {
-        cell.textContent = SECRET ? SECRET[col] : '';
+  // Check if the row is empty (ignore column 0 - first letter which is always there)
+  let isRowEmpty = true;
+  for (let col = 1; col < WORD_LENGTH; col++) {
+    const cell = getCell(row, col);
+    if (cell && cell.textContent && cell.textContent.trim() !== '') {
+      isRowEmpty = false;
+      break;
+    }
+  }
+  
+  // Only restore if the row is empty (only first letter remains)
+  if (isRowEmpty) {
+    for (let col = 0; col < WORD_LENGTH; col++) {
+      if (discoveredPositions[col]) {
+        const cell = getCell(row, col);
+        if (cell) {
+          cell.textContent = SECRET ? SECRET[col] : '';
+        }
       }
     }
   }
@@ -919,6 +999,7 @@ function checkGuess(guess) {
       localStorage.setItem("omsut_bestDailyStreak", String(bestStreak));
       // mark played today
       localStorage.setItem("omsut_lastDailyPlayed", today);
+      localStorage.setItem("omsut_lastDailyResult", "win");
       updateStreakUI();
       // block further input via isGameOver
       isGameOver = true;
@@ -927,7 +1008,14 @@ function checkGuess(guess) {
     if (isGameOver && gameMode === 'free') showReplayButton(true);
   } else if (currentTry === MAX_TRIES - 1) {
     isGameOver = true;
-    setMessage(`Perdu 😅 Le mot était ${SECRET}.`);
+    
+    // Different message for daily vs free mode
+    if (gameMode === "daily") {
+      setMessage(`Perdu 😅`);
+      showRevealAnswerPrompt();
+    } else {
+      setMessage(`Perdu 😅 Le mot était ${SECRET}.`);
+    }
     
     // Record loss
     const endTime = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : null;
@@ -942,6 +1030,7 @@ function checkGuess(guess) {
       localStorage.setItem("omsut_dailyStreak", String(dailyStreak));
       // best stays as is
       localStorage.setItem("omsut_lastDailyPlayed", today);
+      localStorage.setItem("omsut_lastDailyResult", "loss");
       updateStreakUI();
       // block further input via isGameOver
       isGameOver = true;

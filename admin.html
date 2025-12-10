@@ -4,14 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - OMSUT</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+      background-image: linear-gradient(rgba(11,16,32,0.55), rgba(11,16,32,0.55)), url("assets/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       color: #f5f5f5;
       min-height: 100vh;
-      padding: 20px;
+      padding: 80px 20px 20px 20px;
     }
     .container { max-width: 1200px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 40px; }
@@ -79,6 +83,21 @@
   </style>
 </head>
 <body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">🏠 OMSUT</a>
+      <div class="navbar-menu">
+        <div id="user-profile-nav" style="display: flex; align-items: center; gap: 10px;">
+          <img id="profile-photo-small" src="" alt="Photo" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea;" />
+          <span id="profile-name-small" style="color: #f5f5f5; font-size: 0.9rem; font-weight: 500;"></span>
+          <a id="profile-link" href="profile.html" class="navbar-link">Profil</a>
+          <a id="stats-link" href="stats.html" class="navbar-link">Stats</a>
+          <a id="leaderboard-link" href="leaderboard.html" class="navbar-link">Classement</a>
+          <button id="logout-btn" class="navbar-btn">Déconnecter</button>
+        </div>
+      </div>
+    </div>
+  </nav>
   <div class="container">
     <header>
       <h1>⚙️ Admin Panel</h1>
