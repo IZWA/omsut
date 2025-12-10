@@ -11,6 +11,48 @@ function setToken(token) {
   else localStorage.removeItem('omsut_token');
 }
 
+// Handle Keycloak OAuth callback
+async function handleKeycloakCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  
+  if (code) {
+    try {
+      // Show loading message
+      const authCheck = document.getElementById('auth-check');
+      if (authCheck) authCheck.innerHTML = '<p style="color: #667eea;">🔄 Authentification en cours...</p>';
+      
+      // Exchange code for token
+      const res = await fetch(API_BASE + '/api/auth/keycloak/exchange', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to authenticate with Keycloak');
+      }
+      
+      const data = await res.json();
+      
+      // Store token
+      setToken(data.token);
+      
+      // Clean URL (remove OAuth parameters)
+      window.history.replaceState({}, document.title, '/profile.html');
+      
+      // Load profile
+      await loadProfile();
+    } catch (err) {
+      console.error('Keycloak callback error:', err);
+      const authCheck = document.getElementById('auth-check');
+      if (authCheck) authCheck.innerHTML = '<p style="color: #ff6b6b;">❌ Erreur d\'authentification</p><a href="auth-keycloak.html" class="btn btn-primary" style="display: inline-block; margin-top: 12px;">Réessayer</a>';
+    }
+    return true;
+  }
+  return false;
+}
+
 async function apiFetch(path, opts = {}) {
   const headers = Object.assign({}, opts.headers || {});
   const token = getToken();
@@ -47,7 +89,7 @@ async function loadProfile() {
   const profileContent = document.getElementById('profile-content');
 
   if (!token) {
-    if (authCheck) authCheck.innerHTML = '<p style="color: #ff6b6b;">Vous devez être connecté pour accéder à cette page.</p><a href="auth.html" class="btn btn-primary" style="display: inline-block; margin-top: 12px;">Aller à la connexion</a>';
+    if (authCheck) authCheck.innerHTML = '<p style="color: #ff6b6b;">Vous devez être connecté pour accéder à cette page.</p><a href="auth-keycloak.html" class="btn btn-primary" style="display: inline-block; margin-top: 12px;">Aller à la connexion</a>';
     if (profileContent) profileContent.style.display = 'none';
     return;
   }
@@ -81,7 +123,7 @@ async function loadProfile() {
     document.getElementById('edit-display-name').value = data.display_name || '';
   } catch (err) {
     console.error('Profile load error:', err);
-    if (authCheck) authCheck.innerHTML = `<p style="color: #ff6b6b;">Erreur: ${err.message}</p><a href="auth.html" class="btn btn-primary" style="display: inline-block; margin-top: 12px;">Retour à la connexion</a>`;
+    if (authCheck) authCheck.innerHTML = `<p style="color: #ff6b6b;">Erreur: ${err.message}</p><a href="auth-keycloak.html" class="btn btn-primary" style="display: inline-block; margin-top: 12px;">Retour à la connexion</a>`;
     if (profileContent) profileContent.style.display = 'none';
   }
 }
@@ -178,13 +220,42 @@ document.getElementById('upload-photo-btn').addEventListener('click', async () =
   }
 });
 
-// Logout
-document.getElementById('logout-btn').addEventListener('click', () => {
-  setToken(null);
-  window.location.href = 'auth.html';
-});
+// Logout from profile page
+const logoutBtnProfile = document.getElementById('logout-btn-profile');
+if (logoutBtnProfile) {
+  logoutBtnProfile.addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    // Remove local token
+    localStorage.removeItem('omsut_token');
+    
+    // Get Keycloak config to logout from SSO
+    try {
+      const res = await fetch(API_BASE + '/api/auth/keycloak/config');
+      const keycloakConfig = await res.json();
+      
+      if (keycloakConfig && keycloakConfig.url) {
+        // Redirect to Keycloak logout endpoint
+        const logoutUrl = `${keycloakConfig.url}realms/${keycloakConfig.realm}/protocol/openid-connect/logout`;
+        const redirectUri = encodeURIComponent(window.location.origin + '/auth-keycloak.html');
+        window.location.href = `${logoutUrl}?redirect_uri=${redirectUri}`;
+      } else {
+        window.location.href = 'auth-keycloak.html';
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+      window.location.href = 'auth-keycloak.html';
+    }
+  });
+}
 
 // Load profile on page load
-window.addEventListener('load', () => {
-  loadProfile();
+window.addEventListener('load', async () => {
+  // Check if this is a Keycloak callback
+  const isCallback = await handleKeycloakCallback();
+  
+  // If not a callback, load profile normally
+  if (!isCallback) {
+    loadProfile();
+  }
 });

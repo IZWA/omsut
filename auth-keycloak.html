@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>OMSUT — Authentification</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      padding-top: 60px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .auth-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      max-width: 500px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .auth-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .auth-logo {
+      font-size: 4.5rem;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 800;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      animation: fadeInDown 0.8s ease-out;
+    }
+    
+    .auth-subtitle {
+      font-size: 1.3rem;
+      color: #dbe6ff;
+      font-weight: 500;
+      opacity: 0.9;
+      animation: fadeInUp 0.8s ease-out;
+    }
+    
+    #keycloak-login-section {
+      width: 100%;
+      background: rgba(21, 26, 48, 0.78);
+      border: 2px solid #2b3350;
+      border-radius: 20px;
+      padding: 50px 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px) saturate(120%);
+      animation: fadeInScale 0.8s ease-out;
+    }
+    
+    .login-icon {
+      text-align: center;
+      font-size: 3.5rem;
+      margin-bottom: 30px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .btn-keycloak {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 18px 40px;
+      border-radius: 12px;
+      font-size: 1.15rem;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-keycloak::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn-keycloak:hover::before {
+      left: 100%;
+    }
+    
+    .btn-keycloak:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+    }
+    
+    .btn-keycloak:active {
+      transform: translateY(-1px);
+    }
+    
+    .info-text {
+      text-align: center;
+      margin-top: 25px;
+      color: #94a3b8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    
+    .security-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 12px;
+      background: rgba(102, 126, 234, 0.1);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 0.85rem;
+    }
+    
+    #auth-tabs,
+    #login-tab,
+    #register-tab {
+      display: none;
+    }
+    
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .auth-logo {
+        font-size: 3.5rem;
+      }
+      
+      .auth-subtitle {
+        font-size: 1.1rem;
+      }
+      
+      #keycloak-login-section {
+        padding: 40px 30px;
+      }
+      
+      .login-icon {
+        font-size: 3rem;
+      }
+      
+      .btn-keycloak {
+        font-size: 1rem;
+        padding: 16px 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">🏠 OMSUT</a>
+      <div class="navbar-menu">
+        <div id="user-profile" style="display: none;">
+          <img id="profile-photo-small" src="" alt="Photo" />
+          <span id="profile-name-small"></span>
+          <a id="profile-link" href="profile.html" class="navbar-link">Profil</a>
+          <a id="stats-link" href="stats.html" class="navbar-link">Stats</a>
+          <a id="leaderboard-link" href="leaderboard.html" class="navbar-link">Classement</a>
+          <button id="logout-btn" class="navbar-btn">Déconnecter</button>
+        </div>
+        <a id="login-link" href="auth-keycloak.html" class="navbar-btn" style="display:inline-block;">Se connecter</a>
+      </div>
+    </div>
+  </nav>
+  <div class="auth-container">
+    <div class="auth-header">
+      <div class="auth-logo">OMSUT</div>
+      <div class="auth-subtitle">Authentification Sécurisée</div>
+    </div>
+
+    <!-- Keycloak SSO Login -->
+    <div id="keycloak-login-section">
+      <div class="login-icon">🔐</div>
+      <button id="keycloak-login-btn" class="btn-keycloak">
+        Se connecter avec Keycloak
+      </button>
+      <p class="info-text">
+        Utilisez votre compte Keycloak pour accéder à OMSUT en toute sécurité
+      </p>
+      <div class="security-badge">
+        <span>🛡️</span>
+        <span>Connexion sécurisée par SSO</span>
+      </div>
+    </div>
+
+    <div id="auth-tabs" style="display: none;">
+      <button class="tab-btn active" data-tab="login">Se connecter</button>
+      <button class="tab-btn" data-tab="register">S'inscrire</button>
+    </div>
+
+    <!-- Login Tab -->
+    <div id="login-tab" class="auth-tab active" style="display: none;">
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-username">Pseudo</label>
+          <input id="login-username" type="text" placeholder="Votre pseudo" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Mot de passe</label>
+          <input id="login-password" type="password" placeholder="Votre mot de passe" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Se connecter</button>
+        <p id="login-message" class="message"></p>
+      </form>
+    </div>
+
+    <!-- Register Tab -->
+    <div id="register-tab" class="auth-tab" style="display: none;">
+      <form id="register-form">
+        <div class="form-group">
+          <label for="reg-username">Pseudo</label>
+          <input id="reg-username" type="text" placeholder="Votre pseudo" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Mot de passe</label>
+          <input id="reg-password" type="password" placeholder="Votre mot de passe" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-display">Nom d'affichage (optionnel)</label>
+          <input id="reg-display" type="text" placeholder="Comment voulez-vous être appelé ?" />
+        </div>
+        <button type="submit" class="btn btn-primary">S'inscrire</button>
+        <p id="register-message" class="message"></p>
+      </form>
+    </div>
+  </div>
+  <script src="auth-keycloak.js"></script>
+</body>
+</html>

@@ -118,10 +118,32 @@ function setupLogoutHandler() {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn && !logoutBtn.dataset.handlerAdded) {
     logoutBtn.dataset.handlerAdded = 'true';
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
       console.log('[AUTH] Logout clicked');
-      setToken(null);
-      window.location.reload();
+      
+      // Remove local token
+      localStorage.removeItem('omsut_token');
+      
+      // Get Keycloak config to logout from SSO
+      try {
+        const res = await fetch(window.API_BASE + '/api/auth/keycloak/config');
+        const keycloakConfig = await res.json();
+        
+        if (keycloakConfig && keycloakConfig.url) {
+          // Redirect to Keycloak logout endpoint
+          const logoutUrl = `${keycloakConfig.url}realms/${keycloakConfig.realm}/protocol/openid-connect/logout`;
+          const redirectUri = encodeURIComponent(window.location.origin + '/auth-keycloak.html');
+          window.location.href = `${logoutUrl}?redirect_uri=${redirectUri}`;
+        } else {
+          // Fallback if Keycloak not configured
+          window.location.href = 'auth-keycloak.html';
+        }
+      } catch (err) {
+        console.error('[AUTH] Logout error:', err);
+        // Fallback on error
+        window.location.href = 'auth-keycloak.html';
+      }
     });
   }
 }

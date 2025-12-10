@@ -85,7 +85,7 @@
     <div class="navbar-container">
       <a href="home.html" class="navbar-brand">🏠 OMSUT</a>
       <div class="navbar-menu">
-        <div id="user-profile-nav" style="display: none;">
+        <div id="user-profile" style="display: none;">
           <img id="profile-photo-small" src="" alt="Photo" />
           <span id="profile-name-small"></span>
           <a id="profile-link" href="profile.html" class="navbar-link">Profil</a>
@@ -93,7 +93,7 @@
           <a href="leaderboard.html" class="navbar-link" style="background: rgba(102, 126, 234, 0.15);">Classement</a>
           <button id="logout-btn" class="navbar-btn">Déconnecter</button>
         </div>
-        <a id="login-link" href="auth.html" class="navbar-btn" style="display:inline-block;">Se connecter</a>
+        <a id="login-link" href="auth-keycloak.html" class="navbar-btn" style="display:inline-block;">Se connecter</a>
       </div>
     </div>
   </nav>
@@ -117,6 +117,7 @@
     </div>
   </div>
 
+  <script src="auth-helper.js"></script>
   <script>
     const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
 
@@ -180,9 +181,23 @@
       el.style.display = 'block';
     }
 
-    function logout() {
+    async function logout() {
       localStorage.removeItem('omsut_token');
-      window.location.href = 'auth.html';
+      
+      try {
+        const res = await fetch(API_BASE + '/api/auth/keycloak/config');
+        const keycloakConfig = await res.json();
+        
+        if (keycloakConfig && keycloakConfig.url) {
+          const logoutUrl = `${keycloakConfig.url}realms/${keycloakConfig.realm}/protocol/openid-connect/logout`;
+          const redirectUri = encodeURIComponent(window.location.origin + '/auth-keycloak.html');
+          window.location.href = `${logoutUrl}?redirect_uri=${redirectUri}`;
+        } else {
+          window.location.href = 'auth-keycloak.html';
+        }
+      } catch (err) {
+        window.location.href = 'auth-keycloak.html';
+      }
     }
 
     loadLeaderboard();

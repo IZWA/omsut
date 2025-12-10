@@ -14,15 +14,15 @@
     <div class="navbar-container">
       <a href="home.html" class="navbar-brand">🏠 OMSUT</a>
       <div class="navbar-menu">
-        <div id="user-profile-nav" style="display: none;">
-          <img id="profile-photo-small-nav" src="" alt="Photo" />
-          <span id="profile-name-small-nav"></span>
+        <div id="user-profile" style="display: none;">
+          <img id="profile-photo-small" src="" alt="Photo" />
+          <span id="profile-name-small"></span>
           <a href="profile.html" class="navbar-link" style="background: rgba(102, 126, 234, 0.15);">Profil</a>
           <a id="stats-link" href="stats.html" class="navbar-link">Stats</a>
           <a id="leaderboard-link" href="leaderboard.html" class="navbar-link">Classement</a>
-          <button id="logout-btn-nav" class="navbar-btn">Déconnecter</button>
+          <button id="logout-btn" class="navbar-btn">Déconnecter</button>
         </div>
-        <a id="login-link" href="auth.html" class="navbar-btn" style="display:inline-block;">Se connecter</a>
+        <a id="login-link" href="auth-keycloak.html" class="navbar-btn" style="display:inline-block;">Se connecter</a>
       </div>
     </div>
   </nav>
@@ -83,13 +83,14 @@
         <a href="index.html" class="btn btn-secondary">← Retour au Jeu</a>
         <a href="stats.html" class="btn btn-secondary">📊 Mes Stats</a>
         <a href="leaderboard.html" class="btn btn-secondary">🏆 Classement</a>
-        <button id="logout-btn" class="btn btn-danger">Se Déconnecter</button>
+        <button id="logout-btn-profile" class="btn btn-danger">Se Déconnecter</button>
       </div>
     </div>
 
     <p id="message" class="message"></p>
   </div>
 
+  <script src="auth-helper.js"></script>
   <script src="profile.js"></script>
 </body>
 </html>

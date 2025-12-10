@@ -20,6 +20,7 @@ function init() {
       password_hash TEXT,
       display_name TEXT,
       photo_path TEXT,
+      keycloak_id TEXT UNIQUE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 

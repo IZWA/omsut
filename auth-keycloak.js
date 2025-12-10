@@ -1,17 +1,34 @@
-// Auth page logic
+// Auth page logic with Keycloak support
 
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+
+let keycloakConfig = null;
+
+// Load Keycloak config from server
+async function loadKeycloakConfig() {
+  try {
+    const res = await fetch(API_BASE + '/api/auth/keycloak/config');
+    keycloakConfig = await res.json();
+    
+    // Show Keycloak button if configured
+    if (keycloakConfig && keycloakConfig.url) {
+      document.getElementById('keycloak-login-section').style.display = 'block';
+    }
+  } catch (err) {
+    console.warn('Keycloak not configured:', err);
+  }
+}
+
+loadKeycloakConfig();
 
 // Tab switching
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const tabName = btn.dataset.tab;
     
-    // Update active tab button
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
-    // Show active tab content
     document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
     document.getElementById(tabName + '-tab').classList.add('active');
   });
@@ -47,7 +64,31 @@ async function apiFetch(path, opts = {}) {
   return res;
 }
 
-// Login handler
+// Keycloak login
+document.getElementById('keycloak-login-btn')?.addEventListener('click', () => {
+  if (!keycloakConfig) {
+    alert('Keycloak non configuré');
+    return;
+  }
+  
+  // Build OAuth2 authorization URL
+  const redirectUri = window.location.origin + '/profile.html';
+  const clientId = keycloakConfig.clientId;
+  const realm = keycloakConfig.realm;
+  const authUrl = keycloakConfig.url;
+  
+  const authEndpoint = `${authUrl}realms/${realm}/protocol/openid-connect/auth`;
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'openid profile email'
+  });
+  
+  window.location.href = `${authEndpoint}?${params.toString()}`;
+});
+
+// Legacy Login handler
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   clearMessage('login-message');
@@ -73,11 +114,9 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       return;
     }
 
-    // Save token
     localStorage.setItem('omsut_token', data.token);
     setMessage('login-message', 'Connexion réussie ! Redirection...', false);
 
-    // Redirect to profile after 1 second
     setTimeout(() => {
       window.location.href = 'profile.html';
     }, 1000);
@@ -87,7 +126,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   }
 });
 
-// Register handler
+// Legacy Register handler
 document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   clearMessage('register-message');
@@ -101,43 +140,27 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     return;
   }
 
-  if (password.length < 4) {
-    setMessage('register-message', 'Le mot de passe doit avoir au moins 4 caractères.', true);
-    return;
-  }
-
   try {
     const res = await apiFetch('/api/register', {
       method: 'POST',
-      body: { username, password, displayName: displayName || null }
+      body: { username, password, displayName: displayName || username }
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      setMessage('register-message', data.error || 'Erreur d\'inscription.', true);
+      setMessage('register-message', data.error || 'Erreur lors de l\'inscription.', true);
       return;
     }
 
-    // Save token
     localStorage.setItem('omsut_token', data.token);
-    setMessage('register-message', 'Compte créé ! Redirection...', false);
+    setMessage('register-message', 'Inscription réussie ! Redirection...', false);
 
-    // Redirect to profile after 1 second
     setTimeout(() => {
       window.location.href = 'profile.html';
     }, 1000);
   } catch (err) {
-    console.error('Register error:', err);
-    setMessage('register-message', `Erreur: ${err.message}`, true);
-  }
-});
-
-// On page load, check if already authenticated
-window.addEventListener('load', () => {
-  const token = localStorage.getItem('omsut_token');
-  if (token) {
-    // Already authenticated, redirect to game
-    window.location.href = 'index.html';
+    console.error(err);
+    setMessage('register-message', 'Erreur réseau ou serveur indisponible.', true);
   }
 });
