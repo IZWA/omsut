@@ -50,17 +50,25 @@ body {
   align-items: center;
   margin-bottom: 8px;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .controls-top .mode-btn {
   padding: 6px 10px;
   font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.controls-top .mode-btn:active {
+  background: #1a3350;
 }
 
 #user-profile {
   display: flex !important;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 h1 {
@@ -105,19 +113,32 @@ h1 {
   gap: 8px;
   justify-content: center;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .mode-btn {
   background: #0f1724;
   border: 1px solid #2b3350;
   color: #dbe6ff;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: 8px;
   font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mode-btn:active {
+  background: #1a3350;
 }
 
 .mode-btn input[type="radio"] {
   margin-right: 6px;
+  cursor: pointer;
 }
 
 .mode-btn input[type="radio"]:checked + .mode-btn {
@@ -137,16 +158,18 @@ h1 {
 /* debug styles removed */
 
 .keyboard {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
   gap: 4px;
   justify-content: center;
   margin-top: 10px;
+  max-width: 100%;
+  padding: 0 4px;
 }
 
 .keyboard .key {
-  width: 30px;
-  height: 30px;
+  min-width: 30px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -157,6 +180,21 @@ h1 {
   font-weight: 700;
   user-select: none;
   font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.keyboard .key-special {
+  background: #1a3350;
+  font-size: 1.1rem;
+  min-width: 60px;
+}
+
+.keyboard .key:active {
+  transform: scale(0.95);
+  background: #1a3350;
 }
 
 .keyboard .key.dim,
@@ -187,12 +225,26 @@ h1 {
   font-weight: 700;
   text-transform: uppercase;
   background: #15192a;
-  /* empêcher le retour à la ligne à l'intérieur d'une cellule */
   white-space: nowrap;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.cell.editable { cursor: text; }
+.cell.editable {
+  cursor: text;
+}
+
+.cell.editable:active {
+  transform: scale(0.98);
+}
+
 .cell:focus {
+  outline: 2px solid #fdd835;
+  outline-offset: 2px;
+}
+
+.cell.focused {
   outline: 2px solid #fdd835;
   outline-offset: 2px;
 }
@@ -239,23 +291,70 @@ h1 {
   h1 { font-size: 1.25rem; }
   .subtitle { font-size: 0.82rem; }
   .cell { font-size: 0.98rem; }
-  .keyboard .key { width: 28px; height: 28px; font-size: 0.9rem; }
+  .keyboard { grid-template-columns: repeat(auto-fit, minmax(28px, 1fr)); }
+  .keyboard .key { min-width: 28px; height: 38px; font-size: 0.9rem; }
+  .keyboard .key-special { min-width: 56px; }
+  .controls-top { gap: 8px; }
+  #user-profile { font-size: 0.85rem; }
+  #user-profile img { width: 32px !important; height: 32px !important; }
 }
 
 @media (max-width: 520px) {
-  .app { max-width: 96%; padding: 12px; border-radius: 10px; }
-  h1 { font-size: 1.1rem; }
-  .subtitle { font-size: 0.8rem; }
-  .grid { gap: 3px; margin-bottom: 10px; }
-  .cell { font-size: 0.9rem; border-radius: 5px; }
-  .keyboard { gap: 3px; margin-top: 8px; }
-  .keyboard .key { width: 26px; height: 26px; font-size: 0.85rem; }
-  .status { font-size: 0.82rem; gap: 8px; }
+  .app { max-width: 98%; padding: 10px; border-radius: 10px; margin: 8px; }
+  h1 { font-size: 1.15rem; margin-bottom: 4px; }
+  .subtitle { font-size: 0.78rem; margin-bottom: 8px; }
+  .grid { gap: 3px; margin-bottom: 8px; }
+  .cell { font-size: 0.95rem; border-radius: 5px; }
+  .keyboard { gap: 3px; margin-top: 8px; grid-template-columns: repeat(auto-fit, minmax(26px, 1fr)); }
+  .keyboard .key { min-width: 26px; height: 36px; font-size: 0.88rem; }
+  .keyboard .key-special { min-width: 52px; }
+  .status { font-size: 0.8rem; gap: 6px; margin-bottom: 8px; }
+  .modes { gap: 6px; margin-bottom: 8px; }
+  .mode-btn { padding: 6px 10px; font-size: 0.85rem; min-height: 40px; }
+  .controls-top .mode-btn { padding: 5px 8px; font-size: 0.82rem; }
+  .stats { gap: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+}
+
+@media (max-width: 400px) {
+  .app { padding: 8px; margin: 4px; }
+  h1 { font-size: 1.05rem; }
+  .subtitle { font-size: 0.75rem; }
+  .cell { font-size: 0.88rem; }
+  .keyboard { grid-template-columns: repeat(auto-fit, minmax(24px, 1fr)); }
+  .keyboard .key { min-width: 24px; height: 34px; font-size: 0.82rem; }
+  .keyboard .key-special { min-width: 48px; }
+  .mode-btn { font-size: 0.8rem; padding: 5px 8px; }
+  .controls-top .mode-btn { font-size: 0.78rem; padding: 4px 6px; }
+  .status { font-size: 0.78rem; }
+  #user-profile { gap: 8px; }
+  #user-profile img { width: 28px !important; height: 28px !important; }
 }
 
 @media (max-width: 360px) {
-  .app { padding: 8px; }
-  .cell { font-size: 0.82rem; }
-  .keyboard .key { width: 24px; height: 24px; font-size: 0.78rem; }
+  .app { padding: 6px; }
+  h1 { font-size: 1rem; }
   .subtitle { display: none; }
+  .cell { font-size: 0.82rem; }
+  .keyboard { grid-template-columns: repeat(auto-fit, minmax(22px, 1fr)); gap: 2px; }
+  .keyboard .key { min-width: 22px; height: 32px; font-size: 0.78rem; }
+  .keyboard .key-special { min-width: 44px; }
+  .grid { gap: 2px; }
+  .mode-btn { font-size: 0.75rem; padding: 4px 6px; min-height: 36px; }
+  .controls-top { gap: 4px; }
+  .stats { gap: 8px; font-size: 0.8rem; }
+}
+
+/* Landscape mode on mobile */
+@media (max-height: 600px) and (orientation: landscape) {
+  .app { padding: 8px; margin: 4px auto; }
+  h1 { font-size: 1rem; margin-bottom: 2px; }
+  .subtitle { font-size: 0.75rem; margin-bottom: 4px; }
+  .status { margin-bottom: 4px; }
+  .modes { margin-bottom: 4px; }
+  .stats { margin-bottom: 4px; }
+  .grid { margin-bottom: 4px; gap: 2px; }
+  .keyboard { margin-top: 4px; gap: 2px; grid-template-columns: repeat(auto-fit, minmax(24px, 1fr)); }
+  .keyboard .key { min-width: 24px; height: 32px; font-size: 0.8rem; }
+  .keyboard .key-special { min-width: 48px; }
+  .cell { font-size: 0.85rem; }
 }

@@ -1,7 +1,7 @@
 // Paramètres du jeu
 const MIN_WORD_LENGTH = 4;
 let WORD_LENGTH = 6; // sera mis à jour dynamiquement selon le mot choisi
-const MAX_WORD_LENGTH = 12;
+const MAX_WORD_LENGTH = 10;
 const MAX_TRIES = 6;
 
 // Liste de mots et mot secret (sera chargé depuis words.txt)
@@ -35,7 +35,12 @@ function migrateOldKeys() {
 // Run migration before reading any omsut_ keys
 migrateOldKeys();
 
-let gameMode = localStorage.getItem("omsut_mode") || "daily"; // 'daily' or 'free'
+// Check if mode is forced by the page (daily.html or free.html)
+let gameMode = window.FORCED_MODE || localStorage.getItem("omsut_mode") || "daily"; // 'daily' or 'free'
+// If mode is forced, save it to localStorage
+if (window.FORCED_MODE) {
+  localStorage.setItem("omsut_mode", window.FORCED_MODE);
+}
 
 let currentTry = 0;
 let isGameOver = false;
@@ -363,13 +368,144 @@ if (newWordBtn) {
 function renderKeyboard() {
   if (!keyboardEl) return;
   keyboardEl.innerHTML = "";
+  
+  // Ajouter les lettres A-Z
   for (let i = 0; i < 26; i++) {
     const ch = String.fromCharCode(65 + i);
     const k = document.createElement("div");
     k.className = "key";
     k.dataset.letter = ch;
     k.textContent = ch;
+    
+    // Gérer les clics/touches sur le clavier virtuel
+    k.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleVirtualKeyPress(ch);
+    });
+    
+    // Améliorer le feedback tactile
+    k.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      k.style.opacity = '0.7';
+    });
+    
+    k.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      k.style.opacity = '1';
+      handleVirtualKeyPress(ch);
+    });
+    
     keyboardEl.appendChild(k);
+  }
+  
+  // Ajouter le bouton Backspace
+  const backspaceKey = document.createElement("div");
+  backspaceKey.className = "key key-special";
+  backspaceKey.textContent = "⌫";
+  backspaceKey.style.gridColumn = "span 2";
+  backspaceKey.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleVirtualBackspace();
+  });
+  backspaceKey.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    backspaceKey.style.opacity = '0.7';
+  });
+  backspaceKey.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    backspaceKey.style.opacity = '1';
+    handleVirtualBackspace();
+  });
+  keyboardEl.appendChild(backspaceKey);
+  
+  // Ajouter le bouton Enter
+  const enterKey = document.createElement("div");
+  enterKey.className = "key key-special";
+  enterKey.textContent = "✓";
+  enterKey.style.gridColumn = "span 2";
+  enterKey.style.background = "#2d5016";
+  enterKey.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleVirtualEnter();
+  });
+  enterKey.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    enterKey.style.opacity = '0.7';
+  });
+  enterKey.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    enterKey.style.opacity = '1';
+    handleVirtualEnter();
+  });
+  keyboardEl.appendChild(enterKey);
+}
+
+// Gérer les touches du clavier virtuel
+function handleVirtualKeyPress(ch) {
+  if (isGameOver) return;
+  if (gameMode === 'daily') {
+    const last = localStorage.getItem('omsut_lastDailyPlayed') || '';
+    if (last === getTodayStr()) return;
+  }
+  
+  const cell = getCell(currentTry, activeCol);
+  if (!cell) return;
+  cell.textContent = ch;
+  
+  const next = nextEditableCol(currentTry, activeCol);
+  if (next !== null) setActiveCol(next);
+}
+
+function handleVirtualBackspace() {
+  if (isGameOver) return;
+  if (gameMode === 'daily') {
+    const last = localStorage.getItem('omsut_lastDailyPlayed') || '';
+    if (last === getTodayStr()) return;
+  }
+  
+  const cell = getCell(currentTry, activeCol);
+  
+  // Si la cellule actuelle a du texte, la vider (y compris préremplies)
+  if (cell && cell.textContent) {
+    cell.textContent = '';
+    // Restaurer les préremplies après un court délai si la ligne est vide
+    setTimeout(() => restorePrefilledLetters(currentTry), 50);
+    return;
+  }
+  
+  // Sinon, aller à gauche et vider
+  const prevCol = prevEditableCol(currentTry, activeCol);
+  if (prevCol !== null) {
+    setActiveCol(prevCol);
+    const prev = getCell(currentTry, prevCol);
+    if (prev) {
+      prev.textContent = '';
+      // Restaurer les préremplies après un court délai
+      setTimeout(() => restorePrefilledLetters(currentTry), 50);
+    }
+  }
+}
+
+function handleVirtualEnter() {
+  if (isGameOver) return;
+  if (gameMode === 'daily') {
+    const last = localStorage.getItem('omsut_lastDailyPlayed') || '';
+    if (last === getTodayStr()) return;
+  }
+  
+  const guess = getRowText(currentTry);
+  if (guess.length !== WORD_LENGTH) {
+    setMessage(`Le mot doit faire ${WORD_LENGTH} lettres.`, true);
+    return;
+  }
+  if (WORDS.length > 0 && !WORDS.includes(normalizeWord(guess))) {
+    setMessage('Mot inconnu dans la liste de mots.', true);
+    return;
+  }
+  
+  checkGuess(guess);
+  if (!isGameOver) {
+    setEditableRow(currentTry);
   }
 }
 
@@ -482,12 +618,15 @@ function getCell(row, col) {
 }
 
 // find the next editable column (to the right) in a row, skipping fixed cells
-function nextEditableCol(row, fromCol) {
+function nextEditableCol(row, fromCol, requireEmpty = true) {
   for (let c = fromCol + 1; c < WORD_LENGTH; c++) {
     const cell = getCell(row, c);
     if (!cell) continue;
-    // only consider non-fixed AND currently empty cells as next target
-    if (!cell.classList.contains('fixed') && (!cell.textContent || cell.textContent.trim() === '')) return c;
+    if (cell.classList.contains('fixed')) continue;
+    // if requireEmpty is false, accept any editable cell
+    if (!requireEmpty) return c;
+    // otherwise only consider empty cells
+    if (!cell.textContent || cell.textContent.trim() === '') return c;
   }
   return null;
 }
@@ -500,6 +639,18 @@ function prevEditableCol(row, fromCol) {
     if (!cell.classList.contains('fixed')) return c;
   }
   return null;
+}
+
+// Restore prefilled letters for discovered positions
+function restorePrefilledLetters(row) {
+  for (let col = 0; col < WORD_LENGTH; col++) {
+    if (discoveredPositions[col]) {
+      const cell = getCell(row, col);
+      if (cell && (!cell.textContent || cell.textContent.trim() === '')) {
+        cell.textContent = SECRET ? SECRET[col] : '';
+      }
+    }
+  }
 }
 
 function getRowText(row) {
@@ -521,6 +672,22 @@ document.addEventListener('keydown', (e) => {
   }
 
   const key = e.key;
+  
+  // Navigation avec flèches gauche/droite
+  if (key === 'ArrowLeft') {
+    e.preventDefault();
+    const prevCol = prevEditableCol(currentTry, activeCol);
+    if (prevCol !== null) setActiveCol(prevCol);
+    return;
+  }
+  
+  if (key === 'ArrowRight') {
+    e.preventDefault();
+    const next = nextEditableCol(currentTry, activeCol, false);
+    if (next !== null) setActiveCol(next);
+    return;
+  }
+  
   if (/^[a-zA-Z]$/.test(key)) {
     e.preventDefault();
     // place letter at activeCol in current row
@@ -528,7 +695,7 @@ document.addEventListener('keydown', (e) => {
     const cell = getCell(currentTry, activeCol);
     if (!cell) return;
     cell.textContent = ch;
-    // move right
+    // move right to next empty cell if possible
     const next = nextEditableCol(currentTry, activeCol);
     if (next !== null) setActiveCol(next);
     return;
@@ -537,16 +704,25 @@ document.addEventListener('keydown', (e) => {
   if (key === 'Backspace') {
     e.preventDefault();
     const cell = getCell(currentTry, activeCol);
+    
+    // Si la cellule actuelle a du texte, la vider (y compris préremplies)
     if (cell && cell.textContent) {
       cell.textContent = '';
+      // Restaurer les préremplies après un court délai si la ligne est vide
+      setTimeout(() => restorePrefilledLetters(currentTry), 50);
       return;
     }
-    // otherwise move left and clear, but never move into a fixed column
+    
+    // Sinon, aller à gauche et vider
     const prevCol = prevEditableCol(currentTry, activeCol);
     if (prevCol !== null) {
       setActiveCol(prevCol);
       const prev = getCell(currentTry, prevCol);
-      if (prev) prev.textContent = '';
+      if (prev) {
+        prev.textContent = '';
+        // Restaurer les préremplies après un court délai
+        setTimeout(() => restorePrefilledLetters(currentTry), 50);
+      }
     }
     return;
   }
@@ -574,13 +750,18 @@ document.addEventListener('keydown', (e) => {
 });
 
 function setMode(m) {
+  // Don't allow mode changes if mode is forced by the page
+  if (window.FORCED_MODE) {
+    return;
+  }
   gameMode = m;
   localStorage.setItem("omsut_mode", m);
   // reset game when changing mode
   resetGame();
 }
 
-if (modeDailyEl && modeFreeEl) {
+// Only show mode toggles if mode is not forced
+if (modeDailyEl && modeFreeEl && !window.FORCED_MODE) {
   // initialize mode UI from saved mode
   if (gameMode === "daily") modeDailyEl.checked = true;
   else modeFreeEl.checked = true;

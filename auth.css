@@ -200,9 +200,28 @@ input[type="password"]:focus {
 }
 
 /* Responsive */
-@media (max-width: 520px) {
+@media (max-width: 720px) {
+  body {
+    padding: 16px;
+  }
+  
   .auth-container {
-    padding: 30px 20px;
+    padding: 36px 24px;
+  }
+  
+  h1 {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 520px) {
+  body {
+    padding: 12px;
+  }
+  
+  .auth-container {
+    padding: 28px 18px;
+    border-radius: 10px;
   }
 
   h1 {
@@ -212,6 +231,8 @@ input[type="password"]:focus {
   .tab-btn {
     padding: 10px;
     font-size: 0.85rem;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
   }
 
   .form-group {
@@ -219,9 +240,44 @@ input[type="password"]:focus {
   }
 
   input[type="text"],
-  input[type="password"],
+  input[type="password"] {
+    padding: 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
   .btn {
-    padding: 10px;
+    padding: 12px;
     font-size: 0.95rem;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@media (max-width: 360px) {
+  body {
+    padding: 8px;
+  }
+  
+  .auth-container {
+    padding: 20px 14px;
+    border-radius: 8px;
+  }
+  
+  h1 {
+    font-size: 1.7rem;
+  }
+  
+  .subtitle {
+    font-size: 0.85rem;
+  }
+  
+  #auth-tabs {
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  
+  .tab-btn {
+    padding: 8px;
+    font-size: 0.8rem;
   }
 }

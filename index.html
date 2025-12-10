@@ -2,70 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>OMSUT</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta http-equiv="refresh" content="0; url=home.html" />
+  <title>OMSUT - Redirection...</title>
 </head>
 <body>
-  <div class="app">
-    <div class="controls-top">
-      <button id="new-word-btn" class="mode-btn">Nouveau mot</button>
-      <div id="user-profile" style="display: none; align-items: center; gap: 12px; padding: 8px 0;">
-        <img id="profile-photo-small" src="" alt="Photo" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #667eea;" />
-        <span id="profile-name-small" style="color:#f5f5f5;font-size:0.95rem;font-weight:500;flex:1;"></span>
-        <a id="profile-link" href="profile.html" class="mode-btn" style="text-decoration:none;padding:6px 12px;font-size:0.85rem;margin-left:4px;">Profil</a>
-        <a id="stats-link" href="stats.html" class="mode-btn" style="text-decoration:none;padding:6px 12px;font-size:0.85rem;margin-left:4px;">Stats</a>
-        <a id="leaderboard-link" href="leaderboard.html" class="mode-btn" style="text-decoration:none;padding:6px 12px;font-size:0.85rem;margin-left:4px;">Classement</a>
-        <button id="logout-btn" class="mode-btn" style="margin-left:4px;padding:6px 12px;font-size:0.85rem;">Déconnecter</button>
-      </div>
-      <a id="login-link" href="auth.html" class="mode-btn" style="text-decoration:none;display:inline-block;">Se connecter</a>
-    </div>
-    <h1>OMSUT</h1>
-    <p class="subtitle">Devine le mot — amuse-toi bien !</p>
-
-    <div class="status">
-      <span class="info">Longueur : <strong id="word-length">6</strong> lettres</span>
-      <span class="info">Essai : <strong id="current-try">1</strong>/<strong id="max-tries">6</strong></span>
-    </div>
-
-    <div class="modes">
-      <label class="mode-btn">
-        <input type="radio" name="mode" value="daily" id="mode-daily" checked /> Mot du jour
-      </label>
-      <label class="mode-btn">
-        <input type="radio" name="mode" value="free" id="mode-free" /> Libre
-      </label>
-    </div>
-
-    <div class="stats">
-      <span class="info">Streak: <strong id="daily-streak">0</strong></span>
-      <span class="info">Meilleur: <strong id="best-streak">0</strong></span>
-    </div>
-
-    
-
-    <div id="grid" class="grid"></div>
-
-    <div class="controls">
-      <button id="replay-btn" class="mode-btn" style="display:none">Rejouer</button>
-    </div>
-
-    <div id="keyboard" class="keyboard" aria-hidden="false"></div>
-
-    <div id="admin-panel" style="display:none; margin-top:12px;">
-      <h3 style="font-size:1rem;margin:6px 0">Admin</h3>
-      <div>
-        <input id="admin-username" placeholder="Pseudo destinataire" />
-        <select id="admin-badge-select"></select>
-        <button id="admin-award-btn" class="mode-btn">Attribuer badge</button>
-      </div>
-      <div id="admin-badges-list" style="margin-top:8px;font-size:0.9rem;color:#dbe6ff"></div>
-    </div>
-
-    <p id="message" class="message"></p>
-  </div>
-
-  <script src="script.js"></script>
-  <script src="auth-helper.js"></script>
+  <p>Redirection vers l'accueil...</p>
+  <script>window.location.href = 'home.html';</script>
 </body>
 </html>
