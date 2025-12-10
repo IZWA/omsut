@@ -369,7 +369,8 @@ function showReplayButton(show) {
 
 function showNewWordButton(show) {
   if (!newWordBtn) return;
-  newWordBtn.style.display = show ? 'inline-block' : 'none';
+  // Always visible in free mode
+  newWordBtn.style.display = (show && gameMode === 'free') ? 'inline-block' : 'none';
 }
 
 if (replayBtn) {
@@ -635,6 +636,7 @@ function setEditableRow(row) {
     // keep the first column fixed and prefilled with secret's first letter
     if (col === 0) {
       c.classList.add('fixed');
+      c.classList.add('correct'); // Add red background for first letter
       c.tabIndex = -1;
       c.textContent = SECRET ? SECRET[0] : c.textContent || '';
       continue;

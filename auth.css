@@ -10,19 +10,16 @@
 body {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   /* Même background que le jeu */
   background-image: linear-gradient(rgba(11,16,32,0.55), rgba(11,16,32,0.55)), url("assets/bg.jpg");
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
-  padding-top: 60px;
-
   background-blend-mode: overlay;
   color: #f5f5f5;
-  padding: 20px;
+  padding-top: 60px;
 }
 
 .auth-container {
@@ -32,6 +29,7 @@ body {
   padding: 40px;
   max-width: 400px;
   width: 100%;
+  margin: auto;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(6px) saturate(120%);
   color: #f5f5f5;
