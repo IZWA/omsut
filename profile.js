@@ -1,6 +1,6 @@
 // Profile page logic
 
-const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? `${window.location.protocol}//localhost:3000` : '';
 
 function getToken() {
   return localStorage.getItem('omsut_token');
