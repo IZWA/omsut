@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.OMSUT_JWT_SECRET || 'change_this_secret';
 const PORT = process.env.PORT || 3000;
 
 // Keycloak configuration
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080/';
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'https://omsut.fun/';
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'omsut';
 const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'omsut-client';
 

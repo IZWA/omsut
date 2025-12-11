@@ -1,6 +1,8 @@
 // Auth page logic with Keycloak support
 
-const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? `${window.location.protocol}//localhost:3000` : '';
+// Détection automatique de l'environnement
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const API_BASE = isLocal ? `${window.location.protocol}//localhost:3000` : 'https://omsut-backend.onrender.com'; // Remplacez par votre URL backend
 
 let keycloakConfig = null;
 
