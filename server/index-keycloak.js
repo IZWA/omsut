@@ -165,7 +165,7 @@ app.get('/api/auth/keycloak/callback', (req, res) => {
 // Keycloak logout
 app.get('/api/auth/keycloak/logout', (req, res) => {
   req.logout();
-  res.redirect('/auth.html');
+  res.redirect('/auth-keycloak.html');
 });
 
 // Get Keycloak config for frontend
